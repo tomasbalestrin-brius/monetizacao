@@ -3,7 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import type { Database } from '@/integrations/supabase/types';
 
-type AppRole = Database['public']['Enums']['app_role'];
+export type AppRole = Database['public']['Enums']['app_role'];
 
 export interface UserWithRole {
   id: string;
@@ -178,6 +178,44 @@ export function useDeleteUser() {
         description: 'Não foi possível atualizar o usuário.',
       });
       console.error('Error deleting user:', error);
+    },
+  });
+}
+
+export function useCreateUser() {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+
+  return useMutation({
+    mutationFn: async ({ email, password, role, permissions }: {
+      email: string;
+      password: string;
+      role: AppRole;
+      permissions: string[];
+    }) => {
+      const response = await supabase.functions.invoke('admin-create-user', {
+        body: { email, password, role, permissions }
+      });
+
+      if (response.error) throw response.error;
+      if (response.data?.error) throw new Error(response.data.error);
+      
+      return response.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin-users'] });
+      toast({
+        title: 'Usuário criado',
+        description: 'O novo usuário foi criado com sucesso.',
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        variant: 'destructive',
+        title: 'Erro ao criar usuário',
+        description: error.message,
+      });
+      console.error('Error creating user:', error);
     },
   });
 }

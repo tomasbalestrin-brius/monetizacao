@@ -1,0 +1,198 @@
+import React from 'react';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
+import { Loader2, UserPlus } from 'lucide-react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { useCreateUser } from '@/hooks/useUserManagement';
+
+const MODULES = ['dashboard', 'eagles', 'alcateia', 'sharks', 'sdrs', 'reports', 'admin'];
+
+const createUserSchema = z.object({
+  email: z.string().email('Email inválido'),
+  password: z.string().min(6, 'Mínimo 6 caracteres'),
+  role: z.enum(['admin', 'manager', 'viewer']),
+  permissions: z.array(z.string()),
+});
+
+type CreateUserFormData = z.infer<typeof createUserSchema>;
+
+interface CreateUserDialogProps {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+}
+
+export function CreateUserDialog({ open, onOpenChange }: CreateUserDialogProps) {
+  const createUser = useCreateUser();
+  
+  const form = useForm<CreateUserFormData>({
+    resolver: zodResolver(createUserSchema),
+    defaultValues: {
+      email: '',
+      password: '',
+      role: 'viewer',
+      permissions: ['dashboard'],
+    },
+  });
+
+  const watchedRole = form.watch('role');
+
+  const onSubmit = async (data: CreateUserFormData) => {
+    await createUser.mutateAsync({
+      email: data.email,
+      password: data.password,
+      role: data.role,
+      permissions: data.permissions,
+    });
+    form.reset();
+    onOpenChange(false);
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <UserPlus className="h-5 w-5" />
+            Novo Usuário
+          </DialogTitle>
+          <DialogDescription>
+            Crie um novo usuário com email, senha, função e permissões.
+          </DialogDescription>
+        </DialogHeader>
+
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+            <FormField
+              control={form.control}
+              name="email"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Email</FormLabel>
+                  <FormControl>
+                    <Input 
+                      placeholder="usuario@exemplo.com" 
+                      type="email"
+                      {...field} 
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="password"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Senha</FormLabel>
+                  <FormControl>
+                    <Input 
+                      placeholder="Mínimo 6 caracteres" 
+                      type="password"
+                      {...field} 
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="role"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Função</FormLabel>
+                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Selecione uma função" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <SelectItem value="admin">Administrador</SelectItem>
+                      <SelectItem value="manager">Gerente</SelectItem>
+                      <SelectItem value="viewer">Visualizador</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="permissions"
+              render={() => (
+                <FormItem>
+                  <FormLabel>Permissões de Módulos</FormLabel>
+                  <div className="grid grid-cols-2 gap-2 mt-2">
+                    {MODULES.map((module) => (
+                      <FormField
+                        key={module}
+                        control={form.control}
+                        name="permissions"
+                        render={({ field }) => {
+                          const isAdmin = watchedRole === 'admin';
+                          return (
+                            <FormItem className="flex items-center space-x-2 space-y-0">
+                              <FormControl>
+                                <Checkbox
+                                  checked={isAdmin || field.value?.includes(module)}
+                                  disabled={isAdmin}
+                                  onCheckedChange={(checked) => {
+                                    if (isAdmin) return;
+                                    const currentValue = field.value || [];
+                                    if (checked) {
+                                      field.onChange([...currentValue, module]);
+                                    } else {
+                                      field.onChange(currentValue.filter((v) => v !== module));
+                                    }
+                                  }}
+                                />
+                              </FormControl>
+                              <FormLabel className="text-sm font-normal capitalize cursor-pointer">
+                                {module}
+                              </FormLabel>
+                            </FormItem>
+                          );
+                        }}
+                      />
+                    ))}
+                  </div>
+                  {watchedRole === 'admin' && (
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Administradores têm acesso a todos os módulos.
+                    </p>
+                  )}
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <div className="flex justify-end gap-2 pt-4">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => onOpenChange(false)}
+              >
+                Cancelar
+              </Button>
+              <Button type="submit" disabled={createUser.isPending}>
+                {createUser.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                Criar Usuário
+              </Button>
+            </div>
+          </form>
+        </Form>
+      </DialogContent>
+    </Dialog>
+  );
+}

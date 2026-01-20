@@ -1,14 +1,16 @@
-import React from 'react';
-import { Trash2, Loader2 } from 'lucide-react';
-import { useUsers, useAssignRole, useTogglePermission, useDeleteUser } from '@/hooks/useUserManagement';
+import React, { useState } from 'react';
+import { Trash2, Loader2, Plus } from 'lucide-react';
+import { useUsers, useAssignRole, useTogglePermission, useDeleteUser, useCreateUser } from '@/hooks/useUserManagement';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { MetricsTable } from './MetricsTable';
+import { CreateUserDialog } from './CreateUserDialog';
 
 const MODULES = ['dashboard', 'eagles', 'alcateia', 'sharks', 'sdrs', 'reports', 'admin'];
 
 export function AdminPanel() {
+  const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const { user: currentUser } = useAuth();
   const { data: users, isLoading } = useUsers();
   const assignRole = useAssignRole();
@@ -32,7 +34,13 @@ export function AdminPanel() {
 
       {/* Users Management Section */}
       <div className="bg-card rounded-lg p-6 border border-border">
-        <h2 className="text-2xl font-bold text-foreground mb-4">Usuários Cadastrados</h2>
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-2xl font-bold text-foreground">Usuários Cadastrados</h2>
+          <Button onClick={() => setIsCreateDialogOpen(true)}>
+            <Plus className="mr-2 h-4 w-4" />
+            Novo Usuário
+          </Button>
+        </div>
         <div className="space-y-4">
           {users?.map((user) => {
             const isCurrentUser = user.id === currentUser?.id;
@@ -111,10 +119,15 @@ export function AdminPanel() {
 
       <div className="bg-muted/30 rounded-lg p-6 border border-border">
         <p className="text-muted-foreground text-sm">
-          💡 <strong>Dica:</strong> Novos usuários podem se cadastrar na página de login. 
-          Após o cadastro, você pode atribuir funções e permissões aqui.
+          💡 <strong>Dica:</strong> Use o botão "Novo Usuário" para criar usuários diretamente, 
+          ou eles podem se cadastrar na página de login.
         </p>
       </div>
+
+      <CreateUserDialog 
+        open={isCreateDialogOpen} 
+        onOpenChange={setIsCreateDialogOpen} 
+      />
     </div>
   );
 }
