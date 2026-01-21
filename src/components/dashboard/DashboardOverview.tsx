@@ -61,24 +61,40 @@ export function DashboardOverview() {
 
       {/* Main metrics */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <MetricCard
-          title="Faturamento Total do Setor"
-          value={totals.revenue}
-          trend={totals.revenueTrend}
-          icon={DollarSign}
-          large
-          isCurrency
-          variant="success"
-        />
-        <MetricCard
-          title="Entradas Total do Setor"
-          value={totals.entries}
-          trend={totals.entriesTrend}
-          icon={DollarSign}
-          large
-          isCurrency
-          variant="warning"
-        />
+        <div className="space-y-3">
+          <MetricCard
+            title="Faturamento Total do Setor"
+            value={totals.revenue}
+            icon={DollarSign}
+            large
+            isCurrency
+            variant="success"
+          />
+          <MetricCard
+            title="Tendência Faturamento"
+            value={totals.revenueTrend}
+            icon={TrendingUp}
+            isCurrency
+            variant="success"
+          />
+        </div>
+        <div className="space-y-3">
+          <MetricCard
+            title="Entradas Total do Setor"
+            value={totals.entries}
+            icon={DollarSign}
+            large
+            isCurrency
+            variant="warning"
+          />
+          <MetricCard
+            title="Tendência Entradas"
+            value={totals.entriesTrend}
+            icon={TrendingUp}
+            isCurrency
+            variant="warning"
+          />
+        </div>
       </div>
 
       {/* Secondary metrics */}

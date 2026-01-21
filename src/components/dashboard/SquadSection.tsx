@@ -86,22 +86,38 @@ export function SquadSection({ squadMetrics, showClosers = true }: SquadSectionP
             isPercentage
             variant={config.variant}
           />
-          <MetricCard 
-            title="Faturamento" 
-            value={totals.revenue} 
-            trend={totals.revenueTrend}
-            icon={DollarSign} 
-            isCurrency 
-            variant={config.variant}
-          />
-          <MetricCard 
-            title="Entradas" 
-            value={totals.entries} 
-            trend={totals.entriesTrend}
-            icon={DollarSign} 
-            isCurrency
-            variant={config.variant}
-          />
+          <div className="space-y-2">
+            <MetricCard 
+              title="Faturamento" 
+              value={totals.revenue} 
+              icon={DollarSign} 
+              isCurrency 
+              variant={config.variant}
+            />
+            <MetricCard 
+              title="Tendência" 
+              value={totals.revenueTrend} 
+              icon={TrendingUp} 
+              isCurrency 
+              variant={config.variant}
+            />
+          </div>
+          <div className="space-y-2">
+            <MetricCard 
+              title="Entradas" 
+              value={totals.entries} 
+              icon={DollarSign} 
+              isCurrency
+              variant={config.variant}
+            />
+            <MetricCard 
+              title="Tendência" 
+              value={totals.entriesTrend} 
+              icon={TrendingUp} 
+              isCurrency
+              variant={config.variant}
+            />
+          </div>
         </div>
 
         {/* Closers details */}
