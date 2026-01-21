@@ -9,36 +9,36 @@ import {
   useSaveGoogleSheetsConfig, 
   useDisconnectGoogleSheets,
   useSyncGoogleSheets,
-  useSaveRowMapping,
-  DEFAULT_ROW_MAPPING,
-  type RowMapping
+  useSaveWeekBlockConfig,
+  DEFAULT_WEEK_BLOCK_CONFIG,
+  type WeekBlockConfig
 } from '@/hooks/useGoogleSheetsConfig';
 import {
   Collapsible,
   CollapsibleContent,
   CollapsibleTrigger,
 } from '@/components/ui/collapsible';
-import { RowMappingConfig } from './RowMappingConfig';
+import { WeekBlockConfigComponent } from './WeekBlockConfig';
 
 export function GoogleSheetsConfig() {
   const [spreadsheetId, setSpreadsheetId] = useState('');
   const [showHelp, setShowHelp] = useState(false);
-  const [rowMapping, setRowMapping] = useState<RowMapping>({ ...DEFAULT_ROW_MAPPING });
+  const [weekBlockConfig, setWeekBlockConfig] = useState<WeekBlockConfig>({ ...DEFAULT_WEEK_BLOCK_CONFIG });
 
   const { data: config, isLoading } = useGoogleSheetsConfig();
   const saveConfig = useSaveGoogleSheetsConfig();
   const disconnect = useDisconnectGoogleSheets();
   const sync = useSyncGoogleSheets();
-  const saveRowMapping = useSaveRowMapping();
+  const saveWeekBlockConfig = useSaveWeekBlockConfig();
 
   const isConnected = !!config?.spreadsheet_id;
 
-  // Load row mapping from config when it changes
+  // Load config when it changes
   useEffect(() => {
-    if (config?.row_mapping) {
-      setRowMapping(config.row_mapping);
+    if (config?.week_block_config) {
+      setWeekBlockConfig(config.week_block_config);
     }
-  }, [config?.row_mapping]);
+  }, [config?.week_block_config]);
 
   const handleConnect = () => {
     if (!spreadsheetId.trim()) {
@@ -56,9 +56,9 @@ export function GoogleSheetsConfig() {
     sync.mutate();
   };
 
-  const handleSaveRowMapping = () => {
+  const handleSaveWeekBlockConfig = () => {
     if (config?.id) {
-      saveRowMapping.mutate({ configId: config.id, rowMapping });
+      saveWeekBlockConfig.mutate({ configId: config.id, config: weekBlockConfig });
     }
   };
 
@@ -185,12 +185,12 @@ export function GoogleSheetsConfig() {
               </div>
             </div>
 
-            {/* Row Mapping Configuration */}
-            <RowMappingConfig
-              mapping={rowMapping}
-              onChange={(newMapping) => setRowMapping(newMapping)}
-              onSave={handleSaveRowMapping}
-              isSaving={saveRowMapping.isPending}
+            {/* Week Block Configuration */}
+            <WeekBlockConfigComponent
+              config={weekBlockConfig}
+              onChange={setWeekBlockConfig}
+              onSave={handleSaveWeekBlockConfig}
+              isSaving={saveWeekBlockConfig.isPending}
             />
 
             <div className="flex gap-3">

@@ -2,8 +2,8 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
-export interface RowMapping {
-  column: string;
+// Configuration for weekly block structure
+export interface MetricOffsets {
   calls: number;
   sales: number;
   revenue: number;
@@ -15,18 +15,69 @@ export interface RowMapping {
   cancellationEntries: number;
 }
 
-export const DEFAULT_ROW_MAPPING: RowMapping = {
-  column: 'G',              // Coluna SEMANAL por padrão
-  calls: 7,                 // Calls Realizadas
-  sales: 8,                 // Vendas Fechadas
-  revenue: 10,              // Valor Total
-  entries: 11,              // Valor Entrada
-  revenueTrend: 12,         // Tendência Valor Total
-  entriesTrend: 13,         // Tendência Valor Entrada
-  cancellations: 14,        // Numero de cancelamento
-  cancellationValue: 16,    // Valor de venda Cancelamento
-  cancellationEntries: 17,  // Valor total de entrada Can
+export interface WeekBlockConfig {
+  // Block structure configuration
+  firstBlockStartRow: number;    // Row where first week block starts
+  blockOffset: number;           // Number of rows between blocks
+  numberOfBlocks: number;        // How many weeks per tab
+  dateRow: number;               // Relative row for date extraction within block
+  
+  // Column to read from
+  column: string;
+  
+  // Relative metric positions within each block
+  metrics: MetricOffsets;
+}
+
+export const DEFAULT_WEEK_BLOCK_CONFIG: WeekBlockConfig = {
+  firstBlockStartRow: 3,
+  blockOffset: 16,
+  numberOfBlocks: 4,
+  dateRow: 1,
+  column: 'G',
+  metrics: {
+    calls: 2,
+    sales: 3,
+    revenue: 5,
+    entries: 6,
+    revenueTrend: 7,
+    entriesTrend: 8,
+    cancellations: 9,
+    cancellationValue: 11,
+    cancellationEntries: 12,
+  }
 };
+
+// Legacy support - map old format to new format
+function normalizeConfig(rawConfig: unknown): WeekBlockConfig {
+  if (!rawConfig || typeof rawConfig !== 'object') {
+    return { ...DEFAULT_WEEK_BLOCK_CONFIG };
+  }
+  
+  const config = rawConfig as Record<string, unknown>;
+  
+  // Check if it's already the new format
+  if ('metrics' in config && typeof config.metrics === 'object') {
+    return {
+      ...DEFAULT_WEEK_BLOCK_CONFIG,
+      firstBlockStartRow: (config.firstBlockStartRow as number) || DEFAULT_WEEK_BLOCK_CONFIG.firstBlockStartRow,
+      blockOffset: (config.blockOffset as number) || DEFAULT_WEEK_BLOCK_CONFIG.blockOffset,
+      numberOfBlocks: (config.numberOfBlocks as number) || DEFAULT_WEEK_BLOCK_CONFIG.numberOfBlocks,
+      dateRow: (config.dateRow as number) ?? DEFAULT_WEEK_BLOCK_CONFIG.dateRow,
+      column: (config.column as string) || DEFAULT_WEEK_BLOCK_CONFIG.column,
+      metrics: {
+        ...DEFAULT_WEEK_BLOCK_CONFIG.metrics,
+        ...(config.metrics as Record<string, number>),
+      }
+    };
+  }
+  
+  // Legacy format - convert to new format
+  return {
+    ...DEFAULT_WEEK_BLOCK_CONFIG,
+    column: (config.column as string) || DEFAULT_WEEK_BLOCK_CONFIG.column,
+  };
+}
 
 interface GoogleSheetsConfig {
   id: string;
@@ -38,7 +89,7 @@ interface GoogleSheetsConfig {
   created_by: string | null;
   created_at: string;
   updated_at: string;
-  row_mapping: RowMapping | null;
+  week_block_config: WeekBlockConfig;
 }
 
 export function useGoogleSheetsConfig() {
@@ -54,10 +105,9 @@ export function useGoogleSheetsConfig() {
       if (error) throw error;
       if (!data) return null;
       
-      // Parse row_mapping from JSON
       return {
         ...data,
-        row_mapping: data.row_mapping as unknown as RowMapping | null
+        week_block_config: normalizeConfig(data.row_mapping),
       } as GoogleSheetsConfig;
     },
   });
@@ -75,12 +125,16 @@ export function useSaveGoogleSheetsConfig() {
         .limit(1)
         .maybeSingle();
 
+      const configJson = JSON.parse(JSON.stringify(DEFAULT_WEEK_BLOCK_CONFIG));
+      
       if (existing) {
         // Update existing config
         const { data, error } = await supabase
           .from('google_sheets_config')
           .update({ 
             spreadsheet_id: spreadsheetId,
+            row_mapping: configJson,
+            sync_status: 'pending',
             updated_at: new Date().toISOString()
           })
           .eq('id', existing.id)
@@ -93,7 +147,10 @@ export function useSaveGoogleSheetsConfig() {
         // Create new config
         const { data, error } = await supabase
           .from('google_sheets_config')
-          .insert({ spreadsheet_id: spreadsheetId })
+          .insert({ 
+            spreadsheet_id: spreadsheetId,
+            row_mapping: configJson,
+          })
           .select()
           .single();
 
@@ -112,15 +169,16 @@ export function useSaveGoogleSheetsConfig() {
   });
 }
 
-export function useSaveRowMapping() {
+export function useSaveWeekBlockConfig() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ configId, rowMapping }: { configId: string; rowMapping: RowMapping }) => {
+    mutationFn: async ({ configId, config }: { configId: string; config: WeekBlockConfig }) => {
+      const configJson = JSON.parse(JSON.stringify(config));
       const { data, error } = await supabase
         .from('google_sheets_config')
         .update({ 
-          row_mapping: rowMapping as any,
+          row_mapping: configJson,
           updated_at: new Date().toISOString()
         })
         .eq('id', configId)
@@ -132,11 +190,11 @@ export function useSaveRowMapping() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['google-sheets-config'] });
-      toast.success('Mapeamento salvo com sucesso!');
+      toast.success('Configuração salva com sucesso!');
     },
     onError: (error) => {
-      console.error('Error saving row mapping:', error);
-      toast.error('Erro ao salvar mapeamento');
+      console.error('Error saving config:', error);
+      toast.error('Erro ao salvar configuração');
     },
   });
 }
@@ -177,11 +235,11 @@ export function useSyncGoogleSheets() {
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['google-sheets-config'] });
       queryClient.invalidateQueries({ queryKey: ['metrics'] });
-      toast.success(`Sincronização concluída! ${data?.recordsImported || 0} registros importados.`);
+      toast.success(data?.message || 'Sincronização concluída!');
     },
-    onError: (error: any) => {
+    onError: (error: Error) => {
       console.error('Error syncing:', error);
-      toast.error(error?.message || 'Erro ao sincronizar dados');
+      toast.error('Erro na sincronização: ' + (error.message || 'Erro desconhecido'));
     },
   });
 }

@@ -5,8 +5,32 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+interface MetricOffsets {
+  calls: number;
+  sales: number;
+  revenue: number;
+  entries: number;
+  revenueTrend: number;
+  entriesTrend: number;
+  cancellations: number;
+  cancellationValue: number;
+  cancellationEntries: number;
+}
+
+interface WeekBlockConfig {
+  firstBlockStartRow: number;
+  blockOffset: number;
+  numberOfBlocks: number;
+  dateRow: number;
+  column: string;
+  metrics: MetricOffsets;
+}
+
 interface SheetData {
   closerName: string;
+  weekNumber: number;
+  periodStart: string;
+  periodEnd: string;
   calls: number;
   sales: number;
   revenue: number;
@@ -18,374 +42,427 @@ interface SheetData {
   cancellationEntries: number;
 }
 
-// Default row mapping (can be overridden by config)
-const DEFAULT_ROW_MAPPING = {
-  column: 'G',              // Coluna SEMANAL por padrão
-  calls: 7,                 // Calls Realizadas
-  sales: 8,                 // Vendas Fechadas
-  revenue: 10,              // Valor Total
-  entries: 11,              // Valor Entrada
-  revenueTrend: 12,         // Tendência Valor Total
-  entriesTrend: 13,         // Tendência Valor Entrada
-  cancellations: 14,        // Numero de cancelamento
-  cancellationValue: 16,    // Valor de venda Cancelamento
-  cancellationEntries: 17,  // Valor total de entrada Can
+const DEFAULT_CONFIG: WeekBlockConfig = {
+  firstBlockStartRow: 3,
+  blockOffset: 16,
+  numberOfBlocks: 4,
+  dateRow: 1,
+  column: 'G',
+  metrics: {
+    calls: 2,
+    sales: 3,
+    revenue: 5,
+    entries: 6,
+    revenueTrend: 7,
+    entriesTrend: 8,
+    cancellations: 9,
+    cancellationValue: 11,
+    cancellationEntries: 12,
+  }
 };
 
-interface RowMapping {
-  column: string;
-  calls: number;
-  sales: number;
-  revenue: number;
-  entries: number;
-  revenueTrend: number;
-  entriesTrend: number;
-  cancellations: number;
-  cancellationValue: number;
-  cancellationEntries: number;
-}
-
-// Extract spreadsheet ID from URL or return as-is if already an ID
 function extractSpreadsheetId(input: string): string {
-  // If it looks like a URL, extract the ID
   const urlMatch = input.match(/\/spreadsheets\/d\/([a-zA-Z0-9-_]+)/);
   if (urlMatch) {
     return urlMatch[1];
   }
-  // If it contains /d/ pattern but didn't match, try a broader pattern
-  if (input.includes('docs.google.com')) {
-    const parts = input.split('/d/');
-    if (parts[1]) {
-      return parts[1].split('/')[0].split('?')[0].split('#')[0];
-    }
-  }
-  // Return as-is (assume it's already an ID)
   return input.trim();
 }
 
+function normalizeConfig(rawConfig: unknown): WeekBlockConfig {
+  if (!rawConfig || typeof rawConfig !== 'object') {
+    return { ...DEFAULT_CONFIG };
+  }
+  
+  const config = rawConfig as Record<string, unknown>;
+  
+  if ('metrics' in config && typeof config.metrics === 'object') {
+    return {
+      ...DEFAULT_CONFIG,
+      firstBlockStartRow: (config.firstBlockStartRow as number) || DEFAULT_CONFIG.firstBlockStartRow,
+      blockOffset: (config.blockOffset as number) || DEFAULT_CONFIG.blockOffset,
+      numberOfBlocks: (config.numberOfBlocks as number) || DEFAULT_CONFIG.numberOfBlocks,
+      dateRow: (config.dateRow as number) ?? DEFAULT_CONFIG.dateRow,
+      column: (config.column as string) || DEFAULT_CONFIG.column,
+      metrics: {
+        ...DEFAULT_CONFIG.metrics,
+        ...(config.metrics as Record<string, number>),
+      }
+    };
+  }
+  
+  // Legacy format
+  return {
+    ...DEFAULT_CONFIG,
+    column: (config.column as string) || DEFAULT_CONFIG.column,
+  };
+}
+
+function parseNumericValue(value: unknown): number {
+  if (value === null || value === undefined || value === '') {
+    return 0;
+  }
+  
+  const strValue = String(value)
+    .replace(/[R$\s]/g, '')
+    .replace(/\./g, '')
+    .replace(',', '.')
+    .replace('%', '')
+    .trim();
+  
+  const num = parseFloat(strValue);
+  return isNaN(num) ? 0 : num;
+}
+
+function extractDateFromRow(rowData: unknown[], columnIndex: number): { start: string; end: string } | null {
+  try {
+    const cellValue = rowData[columnIndex];
+    if (!cellValue) return null;
+    
+    const dateStr = String(cellValue);
+    
+    // Try to parse date range like "05/01 - 09/01" or "05/01/2026 - 09/01/2026"
+    const rangeMatch = dateStr.match(/(\d{1,2})\/(\d{1,2})(?:\/(\d{2,4}))?\s*[-–]\s*(\d{1,2})\/(\d{1,2})(?:\/(\d{2,4}))?/);
+    
+    if (rangeMatch) {
+      const currentYear = new Date().getFullYear();
+      const startDay = rangeMatch[1].padStart(2, '0');
+      const startMonth = rangeMatch[2].padStart(2, '0');
+      const startYear = rangeMatch[3] ? (rangeMatch[3].length === 2 ? `20${rangeMatch[3]}` : rangeMatch[3]) : String(currentYear);
+      
+      const endDay = rangeMatch[4].padStart(2, '0');
+      const endMonth = rangeMatch[5].padStart(2, '0');
+      const endYear = rangeMatch[6] ? (rangeMatch[6].length === 2 ? `20${rangeMatch[6]}` : rangeMatch[6]) : String(currentYear);
+      
+      return {
+        start: `${startYear}-${startMonth}-${startDay}`,
+        end: `${endYear}-${endMonth}-${endDay}`,
+      };
+    }
+    
+    return null;
+  } catch (error) {
+    console.error('Error extracting date:', error);
+    return null;
+  }
+}
+
+function calculateWeekDates(weekNumber: number): { start: string; end: string } {
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = now.getMonth();
+  
+  // Calculate approximate week dates based on week number
+  const firstDayOfMonth = new Date(year, month, 1);
+  const startDay = 1 + ((weekNumber - 1) * 7);
+  const endDay = Math.min(startDay + 4, new Date(year, month + 1, 0).getDate()); // 5 weekdays or end of month
+  
+  const startDate = new Date(year, month, startDay);
+  const endDate = new Date(year, month, endDay);
+  
+  return {
+    start: startDate.toISOString().split('T')[0],
+    end: endDate.toISOString().split('T')[0],
+  };
+}
+
 Deno.serve(async (req) => {
-  // Handle CORS preflight
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    const GOOGLE_API_KEY = Deno.env.get('GOOGLE_API_KEY');
-    if (!GOOGLE_API_KEY) {
-      throw new Error('GOOGLE_API_KEY não configurada');
-    }
-
-    // Get authorization header
     const authHeader = req.headers.get('Authorization');
-    if (!authHeader?.startsWith('Bearer ')) {
+    if (!authHeader) {
       return new Response(
-        JSON.stringify({ error: 'Não autorizado' }),
+        JSON.stringify({ error: 'Missing authorization header' }),
         { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    // Initialize Supabase client
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY')!;
+    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+    const googleApiKey = Deno.env.get('GOOGLE_API_KEY');
+
+    if (!googleApiKey) {
+      return new Response(
+        JSON.stringify({ error: 'Google API key not configured' }),
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
     const supabase = createClient(supabaseUrl, supabaseAnonKey, {
       global: { headers: { Authorization: authHeader } }
     });
 
-    // Verify user authentication
-    const token = authHeader.replace('Bearer ', '');
-    const { data: claimsData, error: claimsError } = await supabase.auth.getClaims(token);
-    if (claimsError || !claimsData?.claims) {
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    if (authError || !user) {
       return new Response(
-        JSON.stringify({ error: 'Token inválido' }),
+        JSON.stringify({ error: 'Invalid token' }),
         { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    const userId = claimsData.claims.sub;
-    console.log('User authenticated:', userId);
-
-    // Check if user is admin or manager
-    const { data: roleData, error: roleError } = await supabase
+    // Check user role
+    const { data: roleData } = await supabase
       .from('user_roles')
       .select('role')
-      .eq('user_id', userId)
+      .eq('user_id', user.id)
       .single();
 
-    if (roleError || !roleData) {
-      console.error('Error fetching role:', roleError);
+    if (!roleData || !['admin', 'manager'].includes(roleData.role)) {
       return new Response(
-        JSON.stringify({ error: 'Permissão negada' }),
-        { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
-
-    if (roleData.role !== 'admin' && roleData.role !== 'manager') {
-      return new Response(
-        JSON.stringify({ error: 'Apenas administradores e gerentes podem sincronizar' }),
+        JSON.stringify({ error: 'Insufficient permissions' }),
         { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
     // Get Google Sheets config
-    const { data: config, error: configError } = await supabase
+    const { data: configData, error: configError } = await supabase
       .from('google_sheets_config')
       .select('*')
       .limit(1)
       .maybeSingle();
 
-    if (configError) {
-      console.error('Error fetching config:', configError);
-      throw new Error('Erro ao buscar configuração');
+    if (configError || !configData) {
+      return new Response(
+        JSON.stringify({ error: 'Google Sheets not configured' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
     }
 
-    if (!config || !config.spreadsheet_id) {
-      throw new Error('Nenhuma planilha configurada');
-    }
+    const spreadsheetId = extractSpreadsheetId(configData.spreadsheet_id);
+    const blockConfig = normalizeConfig(configData.row_mapping);
 
-    // Extract the spreadsheet ID from URL if needed
-    const spreadsheetId = extractSpreadsheetId(config.spreadsheet_id);
-    console.log('Syncing spreadsheet ID:', spreadsheetId);
+    console.log('Using block config:', JSON.stringify(blockConfig));
 
-    // Get row mapping from config or use defaults
-    const rowMapping: RowMapping = config.row_mapping 
-      ? { ...DEFAULT_ROW_MAPPING, ...config.row_mapping }
-      : DEFAULT_ROW_MAPPING;
-    console.log('Using row mapping:', rowMapping);
+    // Update sync status
+    const adminClient = createClient(supabaseUrl, supabaseServiceKey);
+    await adminClient
+      .from('google_sheets_config')
+      .update({ sync_status: 'syncing', sync_message: 'Buscando dados...' })
+      .eq('id', configData.id);
 
-    // Get spreadsheet metadata (list of sheets/tabs)
-    const metadataUrl = `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}?key=${GOOGLE_API_KEY}`;
+    // Fetch spreadsheet metadata
+    const metadataUrl = `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}?key=${googleApiKey}`;
     const metadataResponse = await fetch(metadataUrl);
     
     if (!metadataResponse.ok) {
       const errorText = await metadataResponse.text();
-      console.error('Google API error:', errorText);
-      
-      // Update config with error status
-      await supabase
+      console.error('Google Sheets API error:', errorText);
+      await adminClient
         .from('google_sheets_config')
-        .update({
-          sync_status: 'error',
-          sync_message: 'Erro ao acessar planilha. Verifique se está pública e o ID está correto.',
-          last_sync_at: new Date().toISOString()
-        })
-        .eq('id', config.id);
+        .update({ sync_status: 'error', sync_message: 'Erro ao acessar planilha' })
+        .eq('id', configData.id);
       
-      throw new Error('Não foi possível acessar a planilha. Verifique se está configurada como pública.');
+      return new Response(
+        JSON.stringify({ error: 'Failed to access spreadsheet', details: errorText }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
     }
 
     const metadata = await metadataResponse.json();
     const sheets = metadata.sheets || [];
-    const spreadsheetName = metadata.properties?.title || 'Planilha';
-
-    console.log(`Found ${sheets.length} sheets in spreadsheet "${spreadsheetName}"`);
-
-    // Get all squads for mapping
-    const { data: squads, error: squadsError } = await supabase
-      .from('squads')
-      .select('id, name, slug');
-
-    if (squadsError) {
-      console.error('Error fetching squads:', squadsError);
-      throw new Error('Erro ao buscar squads');
-    }
-
-    // Get all closers for mapping
-    const { data: existingClosers, error: closersError } = await supabase
-      .from('closers')
-      .select('id, name, squad_id');
-
-    if (closersError) {
-      console.error('Error fetching closers:', closersError);
-      throw new Error('Erro ao buscar closers');
-    }
-
-    const closerMap = new Map(existingClosers?.map(c => [c.name.toLowerCase().trim(), c]) || []);
     
-    let recordsImported = 0;
-    let closersProcessed = 0;
-    const errors: string[] = [];
+    // Filter out template/instruction sheets
+    const closerSheets = sheets.filter((sheet: { properties: { title: string } }) => {
+      const title = sheet.properties.title.toLowerCase();
+      return !title.includes('template') && 
+             !title.includes('instruc') && 
+             !title.includes('modelo') &&
+             !title.includes('exemplo') &&
+             !title.includes('dashboard') &&
+             !title.includes('resumo');
+    });
 
-    // Get current date for period
-    const today = new Date();
-    const periodStart = new Date(today.getFullYear(), today.getMonth(), 1).toISOString().split('T')[0];
-    const periodEnd = new Date(today.getFullYear(), today.getMonth() + 1, 0).toISOString().split('T')[0];
+    console.log(`Found ${closerSheets.length} closer sheets`);
 
-    // Process each sheet (each sheet = one closer)
-    for (const sheet of sheets) {
-      const sheetName = sheet.properties?.title;
-      if (!sheetName) continue;
-
-      // Skip sheets that look like instructions or templates
-      if (sheetName.toLowerCase().includes('template') || 
-          sheetName.toLowerCase().includes('instruc') ||
-          sheetName.toLowerCase().includes('exemplo')) {
-        console.log(`Skipping sheet: ${sheetName}`);
+    const allMetrics: SheetData[] = [];
+    const columnIndex = blockConfig.column.toUpperCase().charCodeAt(0) - 'A'.charCodeAt(0);
+    
+    // Expand range to cover all blocks
+    const maxRow = blockConfig.firstBlockStartRow + (blockConfig.numberOfBlocks * blockConfig.blockOffset) + 5;
+    
+    for (const sheet of closerSheets) {
+      const sheetName = sheet.properties.title;
+      const range = `'${sheetName}'!A1:G${maxRow}`;
+      
+      console.log(`Fetching data from: ${sheetName}, range: ${range}`);
+      
+      const dataUrl = `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/${encodeURIComponent(range)}?key=${googleApiKey}`;
+      const dataResponse = await fetch(dataUrl);
+      
+      if (!dataResponse.ok) {
+        console.error(`Failed to fetch data from ${sheetName}`);
+        continue;
+      }
+      
+      const data = await dataResponse.json();
+      const values = data.values || [];
+      
+      if (values.length === 0) {
+        console.log(`No data in sheet: ${sheetName}`);
         continue;
       }
 
-      console.log(`Processing sheet: ${sheetName}`);
-
-      try {
-        // Fetch data from this sheet (columns A to G, rows 1-20)
-        const range = `'${sheetName}'!A1:G20`;
-        const dataUrl = `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/${encodeURIComponent(range)}?key=${GOOGLE_API_KEY}`;
-        const dataResponse = await fetch(dataUrl);
+      // Process each weekly block
+      for (let blockIndex = 0; blockIndex < blockConfig.numberOfBlocks; blockIndex++) {
+        const blockStartRow = blockConfig.firstBlockStartRow + (blockIndex * blockConfig.blockOffset);
+        const weekNumber = blockIndex + 1;
         
-        if (!dataResponse.ok) {
-          console.error(`Error fetching sheet ${sheetName}:`, await dataResponse.text());
-          errors.push(`Erro ao ler aba "${sheetName}"`);
-          continue;
-        }
-
-        const sheetData = await dataResponse.json();
-        const values = sheetData.values || [];
-
-        // Get column index from mapping (A=0, B=1, ..., G=6)
-        const columnLetter = rowMapping.column || 'G';
-        const columnIndex = columnLetter.toUpperCase().charCodeAt(0) - 'A'.charCodeAt(0);
-        console.log(`Reading from column ${columnLetter} (index ${columnIndex})`);
-
-        // Extract metrics from specific rows and configured column
-        const getValue = (row: number): number => {
-          if (row <= 0 || row > values.length) return 0;
-          const rowData = values[row - 1];
-          if (!rowData || rowData.length <= columnIndex) return 0;
-          const value = rowData[columnIndex]; // Configured column
-          if (typeof value === 'number') return value;
-          if (typeof value === 'string') {
-            // Remove currency formatting and parse
-            const cleaned = value.replace(/[R$\s.]/g, '').replace(',', '.');
-            return parseFloat(cleaned) || 0;
-          }
-          return 0;
+        console.log(`Processing week ${weekNumber} starting at row ${blockStartRow}`);
+        
+        // Helper to get value from a relative position within the block
+        const getBlockValue = (relativeRow: number): number => {
+          const absoluteRow = blockStartRow + relativeRow - 1; // Convert to 0-indexed
+          if (absoluteRow >= values.length) return 0;
+          const rowData = values[absoluteRow];
+          if (!rowData || columnIndex >= rowData.length) return 0;
+          return parseNumericValue(rowData[columnIndex]);
         };
-
+        
+        // Try to extract dates from the block
+        const dateRowIndex = blockStartRow + blockConfig.dateRow - 1; // 0-indexed
+        let periodDates = dateRowIndex < values.length 
+          ? extractDateFromRow(values[dateRowIndex], columnIndex) 
+          : null;
+        
+        // If no dates found, calculate based on week number
+        if (!periodDates) {
+          periodDates = calculateWeekDates(weekNumber);
+          console.log(`Using calculated dates for week ${weekNumber}:`, periodDates);
+        }
+        
         const metrics: SheetData = {
-          closerName: sheetName.trim(),
-          calls: Math.round(getValue(rowMapping.calls)),
-          sales: Math.round(getValue(rowMapping.sales)),
-          revenue: getValue(rowMapping.revenue),
-          entries: getValue(rowMapping.entries),
-          revenueTrend: getValue(rowMapping.revenueTrend),
-          entriesTrend: getValue(rowMapping.entriesTrend),
-          cancellations: Math.round(getValue(rowMapping.cancellations)),
-          cancellationValue: getValue(rowMapping.cancellationValue),
-          cancellationEntries: getValue(rowMapping.cancellationEntries),
+          closerName: sheetName,
+          weekNumber,
+          periodStart: periodDates.start,
+          periodEnd: periodDates.end,
+          calls: getBlockValue(blockConfig.metrics.calls),
+          sales: getBlockValue(blockConfig.metrics.sales),
+          revenue: getBlockValue(blockConfig.metrics.revenue),
+          entries: getBlockValue(blockConfig.metrics.entries),
+          revenueTrend: getBlockValue(blockConfig.metrics.revenueTrend),
+          entriesTrend: getBlockValue(blockConfig.metrics.entriesTrend),
+          cancellations: getBlockValue(blockConfig.metrics.cancellations),
+          cancellationValue: getBlockValue(blockConfig.metrics.cancellationValue),
+          cancellationEntries: getBlockValue(blockConfig.metrics.cancellationEntries),
         };
-
-        console.log(`Metrics for ${sheetName}:`, metrics);
-
-        // Find or create closer
-        let closer = closerMap.get(sheetName.toLowerCase().trim());
         
-        if (!closer) {
-          // Try to find a matching squad or use the first one
-          const defaultSquad = squads?.[0];
-          if (!defaultSquad) {
-            errors.push(`Closer "${sheetName}" não encontrado e não há squads cadastrados`);
-            continue;
-          }
-
-          // Create the closer
-          const { data: newCloser, error: createError } = await supabase
-            .from('closers')
-            .insert({
-              name: sheetName.trim(),
-              squad_id: defaultSquad.id
-            })
-            .select()
-            .single();
-
-          if (createError) {
-            console.error(`Error creating closer ${sheetName}:`, createError);
-            errors.push(`Erro ao criar closer "${sheetName}"`);
-            continue;
-          }
-
-          closer = newCloser;
-          closerMap.set(sheetName.toLowerCase().trim(), newCloser);
-          console.log(`Created new closer: ${sheetName}`);
+        // Only add if there's actual data
+        if (metrics.calls > 0 || metrics.sales > 0 || metrics.revenue > 0) {
+          allMetrics.push(metrics);
+          console.log(`Week ${weekNumber} data for ${sheetName}:`, metrics);
+        } else {
+          console.log(`Skipping week ${weekNumber} for ${sheetName} - no data`);
         }
-
-        if (!closer) {
-          errors.push(`Não foi possível encontrar ou criar closer "${sheetName}"`);
-          continue;
-        }
-
-        // Upsert metrics
-        const { error: metricsError } = await supabase
-          .from('metrics')
-          .upsert({
-            closer_id: closer.id,
-            period_start: periodStart,
-            period_end: periodEnd,
-            calls: metrics.calls,
-            sales: metrics.sales,
-            revenue: metrics.revenue,
-            entries: metrics.entries,
-            revenue_trend: metrics.revenueTrend,
-            entries_trend: metrics.entriesTrend,
-            cancellations: metrics.cancellations,
-            cancellation_value: metrics.cancellationValue,
-            cancellation_entries: metrics.cancellationEntries,
-            source: 'google_sheets',
-            updated_at: new Date().toISOString()
-          }, {
-            onConflict: 'closer_id,period_start,period_end'
-          });
-
-        if (metricsError) {
-          console.error(`Error upserting metrics for ${sheetName}:`, metricsError);
-          errors.push(`Erro ao salvar métricas de "${sheetName}"`);
-          continue;
-        }
-
-        recordsImported++;
-        closersProcessed++;
-        console.log(`Successfully imported metrics for ${sheetName}`);
-
-      } catch (sheetError) {
-        console.error(`Error processing sheet ${sheetName}:`, sheetError);
-        errors.push(`Erro ao processar aba "${sheetName}"`);
       }
     }
 
-    // Update config with sync status
-    const syncStatus = errors.length === 0 ? 'success' : (recordsImported > 0 ? 'partial' : 'error');
-    const syncMessage = errors.length > 0 
-      ? `${recordsImported} registros importados. Erros: ${errors.slice(0, 3).join('; ')}${errors.length > 3 ? '...' : ''}`
-      : `${recordsImported} registros importados com sucesso`;
+    console.log(`Total metrics to save: ${allMetrics.length}`);
 
-    await supabase
+    // Save metrics to database
+    let savedCount = 0;
+    let errorCount = 0;
+
+    for (const metric of allMetrics) {
+      // Find or create closer
+      let { data: closer } = await adminClient
+        .from('closers')
+        .select('id, squad_id')
+        .eq('name', metric.closerName)
+        .maybeSingle();
+
+      if (!closer) {
+        // Get first squad as default
+        const { data: defaultSquad } = await adminClient
+          .from('squads')
+          .select('id')
+          .limit(1)
+          .single();
+
+        if (!defaultSquad) {
+          console.error('No squad found to assign closer');
+          errorCount++;
+          continue;
+        }
+
+        const { data: newCloser, error: createError } = await adminClient
+          .from('closers')
+          .insert({ name: metric.closerName, squad_id: defaultSquad.id })
+          .select('id, squad_id')
+          .single();
+
+        if (createError) {
+          console.error(`Failed to create closer ${metric.closerName}:`, createError);
+          errorCount++;
+          continue;
+        }
+        closer = newCloser;
+      }
+
+      // Upsert metrics
+      const { error: metricsError } = await adminClient
+        .from('metrics')
+        .upsert({
+          closer_id: closer.id,
+          period_start: metric.periodStart,
+          period_end: metric.periodEnd,
+          calls: metric.calls,
+          sales: metric.sales,
+          revenue: metric.revenue,
+          entries: metric.entries,
+          revenue_trend: metric.revenueTrend,
+          entries_trend: metric.entriesTrend,
+          cancellations: metric.cancellations,
+          cancellation_value: metric.cancellationValue,
+          cancellation_entries: metric.cancellationEntries,
+          source: 'google_sheets',
+        }, {
+          onConflict: 'closer_id,period_start,period_end',
+        });
+
+      if (metricsError) {
+        console.error(`Failed to save metrics for ${metric.closerName} week ${metric.weekNumber}:`, metricsError);
+        errorCount++;
+      } else {
+        savedCount++;
+      }
+    }
+
+    // Update sync status
+    const statusMessage = errorCount > 0 
+      ? `Sincronizado: ${savedCount} registros (${errorCount} erros)`
+      : `Sincronizado: ${savedCount} registros semanais`;
+
+    await adminClient
       .from('google_sheets_config')
-      .update({
-        spreadsheet_name: spreadsheetName,
-        sync_status: syncStatus,
-        sync_message: syncMessage,
-        last_sync_at: new Date().toISOString()
+      .update({ 
+        sync_status: 'success', 
+        sync_message: statusMessage,
+        last_sync_at: new Date().toISOString(),
       })
-      .eq('id', config.id);
-
-    console.log('Sync completed:', { recordsImported, closersProcessed, errors: errors.length });
+      .eq('id', configData.id);
 
     return new Response(
-      JSON.stringify({
-        success: true,
-        recordsImported,
-        closersProcessed,
-        spreadsheetName,
-        errors: errors.length > 0 ? errors : undefined
+      JSON.stringify({ 
+        success: true, 
+        message: statusMessage,
+        details: {
+          sheetsProcessed: closerSheets.length,
+          metricsFound: allMetrics.length,
+          metricsSaved: savedCount,
+          errors: errorCount,
+        }
       }),
-      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
 
   } catch (error) {
     console.error('Sync error:', error);
     return new Response(
-      JSON.stringify({ 
-        error: error instanceof Error ? error.message : 'Erro desconhecido',
-        success: false 
-      }),
+      JSON.stringify({ error: 'Internal server error', details: (error as Error).message }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   }
