@@ -31,6 +31,24 @@ const ROW_MAPPING = {
   cancellationEntries: 17,
 };
 
+// Extract spreadsheet ID from URL or return as-is if already an ID
+function extractSpreadsheetId(input: string): string {
+  // If it looks like a URL, extract the ID
+  const urlMatch = input.match(/\/spreadsheets\/d\/([a-zA-Z0-9-_]+)/);
+  if (urlMatch) {
+    return urlMatch[1];
+  }
+  // If it contains /d/ pattern but didn't match, try a broader pattern
+  if (input.includes('docs.google.com')) {
+    const parts = input.split('/d/');
+    if (parts[1]) {
+      return parts[1].split('/')[0].split('?')[0].split('#')[0];
+    }
+  }
+  // Return as-is (assume it's already an ID)
+  return input.trim();
+}
+
 Deno.serve(async (req) => {
   // Handle CORS preflight
   if (req.method === 'OPTIONS') {
@@ -110,8 +128,9 @@ Deno.serve(async (req) => {
       throw new Error('Nenhuma planilha configurada');
     }
 
-    const spreadsheetId = config.spreadsheet_id;
-    console.log('Syncing spreadsheet:', spreadsheetId);
+    // Extract the spreadsheet ID from URL if needed
+    const spreadsheetId = extractSpreadsheetId(config.spreadsheet_id);
+    console.log('Syncing spreadsheet ID:', spreadsheetId);
 
     // Get spreadsheet metadata (list of sheets/tabs)
     const metadataUrl = `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}?key=${GOOGLE_API_KEY}`;
