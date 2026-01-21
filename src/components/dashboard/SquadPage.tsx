@@ -52,22 +52,36 @@ export function SquadPage({ squadSlug }: SquadPageProps) {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <MetricCard
-          title="Valor de Venda Total do Squad"
-          value={totals.revenue}
-          trend={totals.revenueTrend}
-          icon={DollarSign}
-          large
-          isCurrency
-        />
-        <MetricCard
-          title="Valor Total de Entrada do Squad"
-          value={totals.entries}
-          trend={totals.entriesTrend}
-          icon={DollarSign}
-          large
-          isCurrency
-        />
+        <div className="space-y-3">
+          <MetricCard
+            title="Valor de Venda Total do Squad"
+            value={totals.revenue}
+            icon={DollarSign}
+            large
+            isCurrency
+          />
+          <MetricCard
+            title="Tendência Faturamento"
+            value={totals.revenueTrend}
+            icon={TrendingUp}
+            isCurrency
+          />
+        </div>
+        <div className="space-y-3">
+          <MetricCard
+            title="Valor Total de Entrada do Squad"
+            value={totals.entries}
+            icon={DollarSign}
+            large
+            isCurrency
+          />
+          <MetricCard
+            title="Tendência Entradas"
+            value={totals.entriesTrend}
+            icon={TrendingUp}
+            isCurrency
+          />
+        </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -108,18 +122,34 @@ export function SquadPage({ squadSlug }: SquadPageProps) {
                   icon={TrendingUp}
                   isPercentage
                 />
-                <MetricCard
-                  title="Valor em Venda"
-                  value={metrics.revenue}
-                  icon={DollarSign}
-                  isCurrency
-                />
-                <MetricCard
-                  title="Valor de Entrada"
-                  value={metrics.entries}
-                  icon={DollarSign}
-                  isCurrency
-                />
+                <div className="space-y-2">
+                  <MetricCard
+                    title="Valor em Venda"
+                    value={metrics.revenue}
+                    icon={DollarSign}
+                    isCurrency
+                  />
+                  <MetricCard
+                    title="Tendência"
+                    value={metrics.revenueTrend}
+                    icon={TrendingUp}
+                    isCurrency
+                  />
+                </div>
+                <div className="space-y-2">
+                  <MetricCard
+                    title="Valor de Entrada"
+                    value={metrics.entries}
+                    icon={DollarSign}
+                    isCurrency
+                  />
+                  <MetricCard
+                    title="Tendência"
+                    value={metrics.entriesTrend}
+                    icon={TrendingUp}
+                    isCurrency
+                  />
+                </div>
               </div>
             </div>
           ))}
