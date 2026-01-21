@@ -37,6 +37,8 @@ export interface SquadMetrics {
       sales: number;
       revenue: number;
       entries: number;
+      revenueTrend: number;
+      entriesTrend: number;
       conversion: number;
     };
   }[];
@@ -45,6 +47,8 @@ export interface SquadMetrics {
     sales: number;
     revenue: number;
     entries: number;
+    revenueTrend: number;
+    entriesTrend: number;
     conversion: number;
   };
 }
@@ -126,21 +130,23 @@ export function useSquadMetrics(periodStart?: string, periodEnd?: string) {
     });
 
     const closers = Array.from(closerMap.values()).map(({ closer, metrics }) => {
-      const totals = metrics.reduce(
+      const closerTotals = metrics.reduce(
         (acc, m) => ({
           calls: acc.calls + m.calls,
           sales: acc.sales + m.sales,
           revenue: acc.revenue + Number(m.revenue),
           entries: acc.entries + Number(m.entries),
+          revenueTrend: acc.revenueTrend + Number((m as any).revenue_trend || 0),
+          entriesTrend: acc.entriesTrend + Number((m as any).entries_trend || 0),
         }),
-        { calls: 0, sales: 0, revenue: 0, entries: 0 }
+        { calls: 0, sales: 0, revenue: 0, entries: 0, revenueTrend: 0, entriesTrend: 0 }
       );
       
       return {
         closer,
         metrics: {
-          ...totals,
-          conversion: totals.calls > 0 ? (totals.sales / totals.calls) * 100 : 0,
+          ...closerTotals,
+          conversion: closerTotals.calls > 0 ? (closerTotals.sales / closerTotals.calls) * 100 : 0,
         },
       };
     });
@@ -151,8 +157,10 @@ export function useSquadMetrics(periodStart?: string, periodEnd?: string) {
         sales: acc.sales + c.metrics.sales,
         revenue: acc.revenue + c.metrics.revenue,
         entries: acc.entries + c.metrics.entries,
+        revenueTrend: acc.revenueTrend + c.metrics.revenueTrend,
+        entriesTrend: acc.entriesTrend + c.metrics.entriesTrend,
       }),
-      { calls: 0, sales: 0, revenue: 0, entries: 0 }
+      { calls: 0, sales: 0, revenue: 0, entries: 0, revenueTrend: 0, entriesTrend: 0 }
     );
 
     return {
@@ -177,8 +185,10 @@ export function useTotalMetrics(periodStart?: string, periodEnd?: string) {
       sales: acc.sales + sm.totals.sales,
       revenue: acc.revenue + sm.totals.revenue,
       entries: acc.entries + sm.totals.entries,
+      revenueTrend: acc.revenueTrend + sm.totals.revenueTrend,
+      entriesTrend: acc.entriesTrend + sm.totals.entriesTrend,
     }),
-    { calls: 0, sales: 0, revenue: 0, entries: 0 }
+    { calls: 0, sales: 0, revenue: 0, entries: 0, revenueTrend: 0, entriesTrend: 0 }
   );
 
   return {

@@ -89,6 +89,7 @@ export function SquadSection({ squadMetrics, showClosers = true }: SquadSectionP
           <MetricCard 
             title="Faturamento" 
             value={totals.revenue} 
+            trend={totals.revenueTrend}
             icon={DollarSign} 
             isCurrency 
             variant={config.variant}
@@ -96,8 +97,9 @@ export function SquadSection({ squadMetrics, showClosers = true }: SquadSectionP
           <MetricCard 
             title="Entradas" 
             value={totals.entries} 
+            trend={totals.entriesTrend}
             icon={DollarSign} 
-            isCurrency 
+            isCurrency
             variant={config.variant}
           />
         </div>

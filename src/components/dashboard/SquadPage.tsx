@@ -55,7 +55,7 @@ export function SquadPage({ squadSlug }: SquadPageProps) {
         <MetricCard
           title="Valor de Venda Total do Squad"
           value={totals.revenue}
-          trend={12.5}
+          trend={totals.revenueTrend}
           icon={DollarSign}
           large
           isCurrency
@@ -63,7 +63,7 @@ export function SquadPage({ squadSlug }: SquadPageProps) {
         <MetricCard
           title="Valor Total de Entrada do Squad"
           value={totals.entries}
-          trend={8.3}
+          trend={totals.entriesTrend}
           icon={DollarSign}
           large
           isCurrency

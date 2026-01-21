@@ -64,7 +64,7 @@ export function DashboardOverview() {
         <MetricCard
           title="Faturamento Total do Setor"
           value={totals.revenue}
-          trend={12.5}
+          trend={totals.revenueTrend}
           icon={DollarSign}
           large
           isCurrency
@@ -73,7 +73,7 @@ export function DashboardOverview() {
         <MetricCard
           title="Entradas Total do Setor"
           value={totals.entries}
-          trend={8.3}
+          trend={totals.entriesTrend}
           icon={DollarSign}
           large
           isCurrency
