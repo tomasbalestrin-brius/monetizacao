@@ -13,6 +13,7 @@ export interface SDRMetric {
   id: string;
   sdr_id: string;
   date: string;
+  funnel: string | null;
   activated: number;
   scheduled: number;
   scheduled_rate: number;
@@ -62,14 +63,15 @@ export function useSDRs(type?: 'sdr' | 'social_selling') {
   });
 }
 
-// Fetch metrics for a specific SDR within a period
+// Fetch metrics for a specific SDR within a period, optionally filtered by funnel
 export function useSDRMetrics(
   sdrId?: string,
   periodStart?: string,
-  periodEnd?: string
+  periodEnd?: string,
+  funnel?: string | null
 ) {
   return useQuery({
-    queryKey: ['sdr-metrics', sdrId, periodStart, periodEnd],
+    queryKey: ['sdr-metrics', sdrId, periodStart, periodEnd, funnel],
     queryFn: async () => {
       if (!sdrId) return [];
 
@@ -85,10 +87,37 @@ export function useSDRMetrics(
       if (periodEnd) {
         query = query.lte('date', periodEnd);
       }
+      // Filter by specific funnel if provided
+      if (funnel) {
+        query = query.eq('funnel', funnel);
+      }
 
       const { data, error } = await query;
       if (error) throw error;
       return data as SDRMetric[];
+    },
+    enabled: !!sdrId,
+  });
+}
+
+// Fetch list of unique funnels for a specific SDR
+export function useSDRFunnels(sdrId?: string) {
+  return useQuery({
+    queryKey: ['sdr-funnels', sdrId],
+    queryFn: async () => {
+      if (!sdrId) return [];
+
+      const { data, error } = await supabase
+        .from('sdr_metrics')
+        .select('funnel')
+        .eq('sdr_id', sdrId)
+        .not('funnel', 'is', null);
+
+      if (error) throw error;
+
+      // Return unique funnel names
+      const uniqueFunnels = [...new Set(data?.map((m) => m.funnel).filter(Boolean))] as string[];
+      return uniqueFunnels.sort();
     },
     enabled: !!sdrId,
   });

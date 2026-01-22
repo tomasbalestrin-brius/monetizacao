@@ -1,15 +1,16 @@
-import React, { useCallback } from 'react';
+import React, { useCallback, useState, useMemo } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
 import { ArrowLeft, Phone, Users, Calendar, TrendingUp, UserCheck, ShoppingCart, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { PeriodFilter } from '@/components/dashboard/PeriodFilter';
 import { PullToRefresh } from '@/components/ui/PullToRefresh';
 import { SDRMetricCard } from './SDRMetricCard';
 import { SDRChart } from './SDRChart';
 import { SDRDataTable } from './SDRDataTable';
-import { useSDRs, useSDRMetrics, type SDRAggregatedMetrics, type SDRMetric } from '@/hooks/useSdrMetrics';
+import { useSDRs, useSDRMetrics, useSDRFunnels, type SDRAggregatedMetrics, type SDRMetric } from '@/hooks/useSdrMetrics';
 import { useSwipeNavigation } from '@/hooks/useSwipeNavigation';
 import { MetricCardSkeletonGrid, ChartSkeleton, TableSkeleton } from '@/components/dashboard/skeletons';
 import { cn } from '@/lib/utils';
@@ -59,6 +60,35 @@ function calculateAggregatedMetrics(metrics: SDRMetric[]): SDRAggregatedMetrics 
   };
 }
 
+// Aggregate metrics by date when viewing all funnels (sum values for same date)
+function aggregateMetricsByDate(metrics: SDRMetric[]): SDRMetric[] {
+  const byDate = new Map<string, SDRMetric>();
+  
+  for (const m of metrics) {
+    const existing = byDate.get(m.date);
+    if (existing) {
+      existing.activated += m.activated || 0;
+      existing.scheduled += m.scheduled || 0;
+      existing.scheduled_same_day += m.scheduled_same_day || 0;
+      existing.attended += m.attended || 0;
+      existing.sales += m.sales || 0;
+    } else {
+      byDate.set(m.date, { ...m });
+    }
+  }
+  
+  // Recalculate rates
+  const aggregated = Array.from(byDate.values());
+  for (const m of aggregated) {
+    m.scheduled_rate = m.activated > 0 ? (m.scheduled / m.activated) * 100 : 0;
+    m.attendance_rate = m.scheduled_same_day > 0 ? (m.attended / m.scheduled_same_day) * 100 : 0;
+    m.conversion_rate = m.attended > 0 ? (m.sales / m.attended) * 100 : 0;
+    m.funnel = null; // Clear funnel since it's aggregated
+  }
+  
+  return aggregated.sort((a, b) => a.date.localeCompare(b.date));
+}
+
 export function SDRDetailPage({
   sdrId,
   periodStart,
@@ -68,21 +98,44 @@ export function SDRDetailPage({
 }: SDRDetailPageProps) {
   const queryClient = useQueryClient();
   const [, setSearchParams] = useSearchParams();
+  const [selectedFunnel, setSelectedFunnel] = useState<string | null>(null);
   
   const { data: sdrs } = useSDRs();
-  const { data: metrics, isLoading: isLoadingMetrics } = useSDRMetrics(
+  const { data: funnels, isLoading: isLoadingFunnels } = useSDRFunnels(sdrId);
+  const { data: rawMetrics, isLoading: isLoadingMetrics } = useSDRMetrics(
     sdrId,
     periodStart,
-    periodEnd
+    periodEnd,
+    undefined // Always fetch all funnels, filter client-side for aggregation
   );
 
   const sdr = sdrs?.find((s) => s.id === sdrId);
-  const aggregatedMetrics = metrics ? calculateAggregatedMetrics(metrics) : null;
+  
+  // Filter and/or aggregate metrics based on funnel selection
+  const displayMetrics = useMemo(() => {
+    if (!rawMetrics) return [];
+    
+    if (selectedFunnel) {
+      // Filter by selected funnel
+      return rawMetrics.filter(m => m.funnel === selectedFunnel);
+    }
+    
+    // If no funnel selected and SDR has multiple funnels, aggregate by date
+    if (funnels && funnels.length > 1) {
+      return aggregateMetricsByDate(rawMetrics);
+    }
+    
+    return rawMetrics;
+  }, [rawMetrics, selectedFunnel, funnels]);
+  
+  const aggregatedMetrics = displayMetrics.length > 0 ? calculateAggregatedMetrics(displayMetrics) : null;
 
   const Icon = sdr?.type === 'social_selling' ? Users : Phone;
+  const hasFunnels = funnels && funnels.length > 1;
 
   // Swipe navigation between SDRs
   const handleNavigateToSDR = useCallback((id: string) => {
+    setSelectedFunnel(null); // Reset funnel selection when navigating
     setSearchParams({ module: 'sdrs', sdr: id });
   }, [setSearchParams]);
 
@@ -104,6 +157,7 @@ export function SDRDetailPage({
 
   const handleRefresh = useCallback(async () => {
     await queryClient.invalidateQueries({ queryKey: ['sdr-metrics', sdrId] });
+    await queryClient.invalidateQueries({ queryKey: ['sdr-funnels', sdrId] });
   }, [queryClient, sdrId]);
 
   return (
@@ -158,7 +212,7 @@ export function SDRDetailPage({
             </div>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
             {/* Navigation arrows for desktop */}
             {totalItems > 1 && (
               <div className="hidden md:flex items-center gap-1 mr-2">
@@ -181,6 +235,26 @@ export function SDRDetailPage({
                   <ChevronRight size={16} />
                 </Button>
               </div>
+            )}
+            
+            {/* Funnel selector - only show if SDR has multiple funnels */}
+            {hasFunnels && !isLoadingFunnels && (
+              <Select
+                value={selectedFunnel || 'all'}
+                onValueChange={(value) => setSelectedFunnel(value === 'all' ? null : value)}
+              >
+                <SelectTrigger className="w-[180px]">
+                  <SelectValue placeholder="Todos os Funis" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todos os Funis</SelectItem>
+                  {funnels.map((funnel) => (
+                    <SelectItem key={funnel} value={funnel}>
+                      {funnel}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             )}
             
             <PeriodFilter
@@ -250,14 +324,17 @@ export function SDRDetailPage({
         {isLoadingMetrics ? (
           <ChartSkeleton height={350} />
         ) : (
-          <SDRChart metrics={metrics || []} />
+          <SDRChart metrics={displayMetrics || []} />
         )}
 
         {/* Data Table */}
         {isLoadingMetrics ? (
           <TableSkeleton rows={5} columns={8} />
         ) : (
-          <SDRDataTable metrics={metrics || []} />
+          <SDRDataTable 
+            metrics={displayMetrics || []} 
+            showFunnelColumn={!selectedFunnel && hasFunnels}
+          />
         )}
       </div>
     </PullToRefresh>

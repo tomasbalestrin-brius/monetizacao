@@ -13,9 +13,10 @@ import type { SDRMetric } from '@/hooks/useSdrMetrics';
 
 interface SDRDataTableProps {
   metrics: SDRMetric[];
+  showFunnelColumn?: boolean;
 }
 
-export function SDRDataTable({ metrics }: SDRDataTableProps) {
+export function SDRDataTable({ metrics, showFunnelColumn = false }: SDRDataTableProps) {
   if (metrics.length === 0) {
     return (
       <div className="flex items-center justify-center h-32 bg-card rounded-xl border border-border">
@@ -39,6 +40,9 @@ export function SDRDataTable({ metrics }: SDRDataTableProps) {
           <TableHeader>
             <TableRow className="hover:bg-transparent">
               <TableHead className="text-xs font-semibold">Data</TableHead>
+              {showFunnelColumn && (
+                <TableHead className="text-xs font-semibold">Funil</TableHead>
+              )}
               <TableHead className="text-xs font-semibold text-right">Ativados</TableHead>
               <TableHead className="text-xs font-semibold text-right">Agendados</TableHead>
               <TableHead className="text-xs font-semibold text-right">% Agend.</TableHead>
@@ -50,11 +54,16 @@ export function SDRDataTable({ metrics }: SDRDataTableProps) {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {sortedMetrics.map((metric) => (
-              <TableRow key={metric.id} className="hover:bg-muted/50">
+            {sortedMetrics.map((metric, index) => (
+              <TableRow key={metric.id || `${metric.date}-${index}`} className="hover:bg-muted/50">
                 <TableCell className="font-medium">
                   {format(new Date(metric.date), 'dd/MM/yyyy', { locale: ptBR })}
                 </TableCell>
+                {showFunnelColumn && (
+                  <TableCell className="text-muted-foreground">
+                    {metric.funnel || '-'}
+                  </TableCell>
+                )}
                 <TableCell className="text-right">{metric.activated}</TableCell>
                 <TableCell className="text-right">{metric.scheduled}</TableCell>
                 <TableCell className="text-right">

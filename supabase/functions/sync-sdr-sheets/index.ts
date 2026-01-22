@@ -58,6 +58,7 @@ interface FunnelBlock {
 interface RawMetric {
   sdr: string;
   type: string;
+  funnel: string;  // Nome do funil de origem
   date: string;
   activated: number;
   scheduled: number;
@@ -167,17 +168,28 @@ function findFunnelBlocks(titleRow: string[], headerRow: string[]): { blocks: Fu
   return { blocks, sharedDataCol };
 }
 
-// Aggregate metrics by SDR and date
-function aggregateBySDR(rawMetrics: RawMetric[]): Map<string, { type: string; dates: Map<string, AggregatedMetric> }> {
-  const aggregated = new Map<string, { type: string; dates: Map<string, AggregatedMetric> }>();
+// Group metrics by SDR, funnel, and date (keeping each funnel separate)
+interface FunnelMetricData {
+  type: string;
+  funnels: Map<string, Map<string, AggregatedMetric>>; // funnel -> date -> metrics
+}
+
+function groupBySDRAndFunnel(rawMetrics: RawMetric[]): Map<string, FunnelMetricData> {
+  const grouped = new Map<string, FunnelMetricData>();
   
   for (const metric of rawMetrics) {
-    if (!aggregated.has(metric.sdr)) {
-      aggregated.set(metric.sdr, { type: metric.type, dates: new Map() });
+    if (!grouped.has(metric.sdr)) {
+      grouped.set(metric.sdr, { type: metric.type, funnels: new Map() });
     }
     
-    const sdrData = aggregated.get(metric.sdr)!;
-    const existing = sdrData.dates.get(metric.date) || {
+    const sdrData = grouped.get(metric.sdr)!;
+    
+    if (!sdrData.funnels.has(metric.funnel)) {
+      sdrData.funnels.set(metric.funnel, new Map());
+    }
+    
+    const funnelDates = sdrData.funnels.get(metric.funnel)!;
+    const existing = funnelDates.get(metric.date) || {
       activated: 0,
       scheduled: 0,
       scheduled_same_day: 0,
@@ -188,29 +200,31 @@ function aggregateBySDR(rawMetrics: RawMetric[]): Map<string, { type: string; da
       conversion_rate: 0,
     };
     
-    // Sum absolute values
+    // Sum values (in case of duplicates)
     existing.activated += metric.activated;
     existing.scheduled += metric.scheduled;
     existing.scheduled_same_day += metric.scheduled_same_day;
     existing.attended += metric.attended;
     existing.sales += metric.sales;
     
-    sdrData.dates.set(metric.date, existing);
+    funnelDates.set(metric.date, existing);
   }
   
-  // Recalculate percentages based on totals
-  for (const [, sdrData] of aggregated) {
-    for (const [, metrics] of sdrData.dates) {
-      metrics.scheduled_rate = metrics.activated > 0 
-        ? (metrics.scheduled / metrics.activated) * 100 : 0;
-      metrics.attendance_rate = metrics.scheduled > 0 
-        ? (metrics.attended / metrics.scheduled) * 100 : 0;
-      metrics.conversion_rate = metrics.attended > 0 
-        ? (metrics.sales / metrics.attended) * 100 : 0;
+  // Recalculate percentages
+  for (const [, sdrData] of grouped) {
+    for (const [, dates] of sdrData.funnels) {
+      for (const [, metrics] of dates) {
+        metrics.scheduled_rate = metrics.activated > 0 
+          ? (metrics.scheduled / metrics.activated) * 100 : 0;
+        metrics.attendance_rate = metrics.scheduled > 0 
+          ? (metrics.attended / metrics.scheduled) * 100 : 0;
+        metrics.conversion_rate = metrics.attended > 0 
+          ? (metrics.sales / metrics.attended) * 100 : 0;
+      }
     }
   }
   
-  return aggregated;
+  return grouped;
 }
 
 Deno.serve(async (req) => {
@@ -348,6 +362,7 @@ Deno.serve(async (req) => {
         const metric: RawMetric = {
           sdr: block.sdr,
           type: block.type,
+          funnel: block.funnel,  // Identificador do funil
           date: parsedDate,
           activated: parseNumber(row[titleCol + offsets.activated]),
           scheduled: parseNumber(row[titleCol + offsets.scheduled]),
@@ -370,17 +385,17 @@ Deno.serve(async (req) => {
     console.log(`Rows skipped (invalid date): ${rowsSkipped}`);
     console.log(`Raw metrics extracted: ${rawMetrics.length}`);
 
-    // Aggregate by SDR
-    const aggregatedData = aggregateBySDR(rawMetrics);
-    console.log(`Aggregated data for ${aggregatedData.size} SDRs`);
+    // Group by SDR and funnel (keeping each funnel separate)
+    const groupedData = groupBySDRAndFunnel(rawMetrics);
+    console.log(`Grouped data for ${groupedData.size} SDRs`);
 
     let totalMetricsImported = 0;
     let sdrsProcessed = 0;
     const errors: string[] = [];
 
     // Process each SDR
-    for (const [sdrName, sdrData] of aggregatedData) {
-      console.log(`Processing SDR: ${sdrName} (${sdrData.type})`);
+    for (const [sdrName, sdrData] of groupedData) {
+      console.log(`Processing SDR: ${sdrName} (${sdrData.type}) with ${sdrData.funnels.size} funnel(s)`);
       
       try {
         // Get or create SDR
@@ -416,37 +431,42 @@ Deno.serve(async (req) => {
           console.log(`Created new SDR: ${sdrName} -> ${sdrId}`);
         }
 
-        // Prepare metrics for upsert
-        const metricsToUpsert = Array.from(sdrData.dates.entries()).map(([date, metrics]) => ({
-          sdr_id: sdrId,
-          date,
-          activated: metrics.activated,
-          scheduled: metrics.scheduled,
-          scheduled_rate: metrics.scheduled_rate,
-          scheduled_same_day: metrics.scheduled_same_day,
-          attended: metrics.attended,
-          attendance_rate: metrics.attendance_rate,
-          sales: metrics.sales,
-          conversion_rate: metrics.conversion_rate,
-          source: 'google_sheets',
-        }));
+        // Process each funnel separately
+        for (const [funnelName, dateMetrics] of sdrData.funnels) {
+          // Prepare metrics for upsert with funnel identifier
+          const metricsToUpsert = Array.from(dateMetrics.entries()).map(([date, metrics]) => ({
+            sdr_id: sdrId,
+            date,
+            funnel: funnelName,  // Include funnel name
+            activated: metrics.activated,
+            scheduled: metrics.scheduled,
+            scheduled_rate: metrics.scheduled_rate,
+            scheduled_same_day: metrics.scheduled_same_day,
+            attended: metrics.attended,
+            attendance_rate: metrics.attendance_rate,
+            sales: metrics.sales,
+            conversion_rate: metrics.conversion_rate,
+            source: 'google_sheets',
+          }));
 
-        console.log(`Upserting ${metricsToUpsert.length} metrics for ${sdrName}`);
+          console.log(`Upserting ${metricsToUpsert.length} metrics for ${sdrName} - ${funnelName}`);
 
-        const { error: upsertError } = await supabase
-          .from('sdr_metrics')
-          .upsert(metricsToUpsert, {
-            onConflict: 'sdr_id,date',
-            ignoreDuplicates: false,
-          });
+          const { error: upsertError } = await supabase
+            .from('sdr_metrics')
+            .upsert(metricsToUpsert, {
+              onConflict: 'sdr_id,date,funnel',  // Updated constraint
+              ignoreDuplicates: false,
+            });
 
-        if (upsertError) {
-          console.error(`Error upserting metrics for ${sdrName}:`, upsertError);
-          errors.push(`Failed to save metrics for: ${sdrName}`);
-        } else {
-          totalMetricsImported += metricsToUpsert.length;
-          sdrsProcessed++;
+          if (upsertError) {
+            console.error(`Error upserting metrics for ${sdrName} - ${funnelName}:`, upsertError);
+            errors.push(`Failed to save metrics for: ${sdrName} - ${funnelName}`);
+          } else {
+            totalMetricsImported += metricsToUpsert.length;
+          }
         }
+        
+        sdrsProcessed++;
       } catch (sdrError) {
         console.error(`Error processing SDR ${sdrName}:`, sdrError);
         errors.push(`Error processing: ${sdrName}`);
