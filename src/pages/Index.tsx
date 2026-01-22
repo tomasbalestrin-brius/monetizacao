@@ -3,6 +3,7 @@ import { useSearchParams } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { Sidebar, ModuleId } from '@/components/dashboard/Sidebar';
 import { Header } from '@/components/dashboard/Header';
+import { BottomNavigation } from '@/components/dashboard/BottomNavigation';
 import { DashboardOverview } from '@/components/dashboard/DashboardOverview';
 import { SquadPage } from '@/components/dashboard/SquadPage';
 import { AdminPanel } from '@/components/dashboard/AdminPanel';
@@ -74,10 +75,16 @@ const Index = () => {
       <div className="md:pl-64 min-h-screen flex flex-col">
         <Header onMenuClick={() => setSidebarOpen(true)} />
         
-        <main className="flex-1 p-4 md:p-6 lg:p-8">
+        <main className="flex-1 p-4 md:p-6 lg:p-8 pb-24 md:pb-8">
           {renderContent()}
         </main>
       </div>
+      
+      {/* Mobile Bottom Navigation */}
+      <BottomNavigation
+        activeModule={activeModule}
+        onModuleChange={setActiveModule}
+      />
     </div>
   );
 };

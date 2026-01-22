@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import { useSearchParams } from 'react-router-dom';
+import { useQueryClient } from '@tanstack/react-query';
 import { Phone, Users, UserCheck, Calendar, TrendingUp, ShoppingCart } from 'lucide-react';
 import { PeriodFilter } from '@/components/dashboard/PeriodFilter';
 import { SDRTypeToggle, SDRType } from './SDRTypeToggle';
@@ -9,9 +10,11 @@ import { SDRDetailPage } from './SDRDetailPage';
 import { SDRSheetsConfig } from './SDRSheetsConfig';
 import { useSDRTotalMetrics, useSDRsWithMetrics } from '@/hooks/useSdrMetrics';
 import { useSDRSheetsConfig } from '@/hooks/useSDRSheetsConfig';
-import { Skeleton } from '@/components/ui/skeleton';
+import { PullToRefresh } from '@/components/ui/PullToRefresh';
+import { MetricCardSkeletonGrid, SDRCardSkeletonGrid } from '@/components/dashboard/skeletons';
 
 export function SDRDashboard() {
+  const queryClient = useQueryClient();
   const [searchParams, setSearchParams] = useSearchParams();
   const [sdrType, setSdrType] = useState<SDRType>('sdr');
   const [periodStart, setPeriodStart] = useState<string | undefined>();
@@ -48,6 +51,12 @@ export function SDRDashboard() {
     setSearchParams({ module: 'sdrs' });
   };
 
+  const handleRefresh = useCallback(async () => {
+    await queryClient.invalidateQueries({ queryKey: ['sdr-total-metrics'] });
+    await queryClient.invalidateQueries({ queryKey: ['sdrs-with-metrics'] });
+    await queryClient.invalidateQueries({ queryKey: ['sdr-sheets-config'] });
+  }, [queryClient]);
+
   // If a specific SDR is selected, render the detail page
   if (selectedSdrId) {
     return (
@@ -65,44 +74,42 @@ export function SDRDashboard() {
   const hasData = sdrsWithMetrics && sdrsWithMetrics.length > 0;
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-        <div className="flex items-center gap-4">
-          <div className="p-3 rounded-2xl bg-primary/10">
-            <Phone size={28} className="text-primary" />
+    <PullToRefresh onRefresh={handleRefresh}>
+      <div className="space-y-6">
+        {/* Header */}
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+          <div className="flex items-center gap-4">
+            <div className="p-3 rounded-2xl bg-primary/10">
+              <Phone size={28} className="text-primary" />
+            </div>
+            <div>
+              <h1 className="text-2xl font-bold text-foreground">Dashboard SDR</h1>
+              <p className="text-muted-foreground">
+                Métricas consolidadas de {sdrType === 'sdr' ? 'SDRs' : 'Social Selling'}
+              </p>
+            </div>
           </div>
-          <div>
-            <h1 className="text-2xl font-bold text-foreground">Dashboard SDR</h1>
-            <p className="text-muted-foreground">
-              Métricas consolidadas de {sdrType === 'sdr' ? 'SDRs' : 'Social Selling'}
-            </p>
+
+          <div className="flex flex-wrap items-center gap-3">
+            <SDRTypeToggle value={sdrType} onChange={setSdrType} />
+            <PeriodFilter
+              periodStart={periodStart}
+              periodEnd={periodEnd}
+              onPeriodChange={handlePeriodChange}
+            />
           </div>
         </div>
 
-        <div className="flex flex-wrap items-center gap-3">
-          <SDRTypeToggle value={sdrType} onChange={setSdrType} />
-          <PeriodFilter
-            periodStart={periodStart}
-            periodEnd={periodEnd}
-            onPeriodChange={handlePeriodChange}
-          />
-        </div>
-      </div>
+        {/* Sheets Configuration - compact when connected, prominent when not */}
+        {!isLoading && (
+          <SDRSheetsConfig variant={isConnected && hasData ? 'compact' : 'prominent'} />
+        )}
 
-      {/* Sheets Configuration - compact when connected, prominent when not */}
-      {!isLoading && (
-        <SDRSheetsConfig variant={isConnected && hasData ? 'compact' : 'prominent'} />
-      )}
-
-      {/* Consolidated Metrics */}
-      <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-4">
+        {/* Consolidated Metrics */}
         {isLoading ? (
-          Array.from({ length: 7 }).map((_, i) => (
-            <Skeleton key={i} className="h-24 rounded-xl" />
-          ))
+          <MetricCardSkeletonGrid count={7} />
         ) : (
-          <>
+          <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-4">
             <SDRMetricCard
               title="Ativados"
               value={totalMetrics?.totalActivated || 0}
@@ -143,46 +150,42 @@ export function SDRDashboard() {
               icon={ShoppingCart}
               variant="highlight"
             />
-          </>
-        )}
-      </div>
-
-      {/* SDR List */}
-      <div>
-        <h2 className="text-lg font-semibold text-foreground mb-4">
-          {sdrType === 'sdr' ? 'SDRs' : 'Social Selling'} Individuais
-        </h2>
-
-        {isLoading ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {Array.from({ length: 6 }).map((_, i) => (
-              <Skeleton key={i} className="h-40 rounded-xl" />
-            ))}
-          </div>
-        ) : sdrsWithMetrics && sdrsWithMetrics.length > 0 ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {sdrsWithMetrics.map((sdr) => (
-              <SDRCard
-                key={sdr.id}
-                sdr={sdr}
-                onClick={() => handleSDRClick(sdr.id)}
-              />
-            ))}
-          </div>
-        ) : (
-          <div className="flex flex-col items-center justify-center py-12 bg-card rounded-xl border border-border">
-            <Phone size={48} className="text-muted-foreground mb-4" />
-            <h3 className="text-lg font-semibold text-foreground mb-2">
-              Nenhum {sdrType === 'sdr' ? 'SDR' : 'Social Selling'} cadastrado
-            </h3>
-            <p className="text-muted-foreground text-center max-w-md">
-              {isConnected 
-                ? 'Clique em "Sincronizar" acima para importar os dados da planilha.'
-                : 'Conecte uma planilha do Google Sheets acima para importar os dados.'}
-            </p>
           </div>
         )}
+
+        {/* SDR List */}
+        <div>
+          <h2 className="text-lg font-semibold text-foreground mb-4">
+            {sdrType === 'sdr' ? 'SDRs' : 'Social Selling'} Individuais
+          </h2>
+
+          {isLoading ? (
+            <SDRCardSkeletonGrid count={6} />
+          ) : sdrsWithMetrics && sdrsWithMetrics.length > 0 ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {sdrsWithMetrics.map((sdr) => (
+                <SDRCard
+                  key={sdr.id}
+                  sdr={sdr}
+                  onClick={() => handleSDRClick(sdr.id)}
+                />
+              ))}
+            </div>
+          ) : (
+            <div className="flex flex-col items-center justify-center py-12 bg-card rounded-xl border border-border">
+              <Phone size={48} className="text-muted-foreground mb-4" />
+              <h3 className="text-lg font-semibold text-foreground mb-2">
+                Nenhum {sdrType === 'sdr' ? 'SDR' : 'Social Selling'} cadastrado
+              </h3>
+              <p className="text-muted-foreground text-center max-w-md">
+                {isConnected 
+                  ? 'Clique em "Sincronizar" acima para importar os dados da planilha.'
+                  : 'Conecte uma planilha do Google Sheets acima para importar os dados.'}
+              </p>
+            </div>
+          )}
+        </div>
       </div>
-    </div>
+    </PullToRefresh>
   );
 }
