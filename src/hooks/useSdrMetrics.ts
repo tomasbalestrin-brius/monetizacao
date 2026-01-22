@@ -193,11 +193,12 @@ export function useSDRTotalMetrics(
 
       const sdrIds = sdrs.map((s) => s.id);
 
-      // Then get all metrics for those SDRs
+      // Then get all metrics for those SDRs (only those with funnel identified)
       let query = supabase
         .from('sdr_metrics')
         .select('*')
-        .in('sdr_id', sdrIds);
+        .in('sdr_id', sdrIds)
+        .not('funnel', 'is', null);
 
       if (periodStart) {
         query = query.gte('date', periodStart);
@@ -236,12 +237,13 @@ export function useSDRsWithMetrics(
         return [] as SDRWithMetrics[];
       }
 
-      // Get all metrics for those SDRs in a single query
+      // Get all metrics for those SDRs in a single query (only those with funnel identified)
       const sdrIds = sdrs.map((s) => s.id);
       let query = supabase
         .from('sdr_metrics')
         .select('*')
-        .in('sdr_id', sdrIds);
+        .in('sdr_id', sdrIds)
+        .not('funnel', 'is', null);
 
       if (periodStart) {
         query = query.gte('date', periodStart);
