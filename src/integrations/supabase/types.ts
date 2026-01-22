@@ -200,6 +200,7 @@ export type Database = {
           conversion_rate: number
           created_at: string
           date: string
+          funnel: string | null
           id: string
           sales: number
           scheduled: number
@@ -216,6 +217,7 @@ export type Database = {
           conversion_rate?: number
           created_at?: string
           date: string
+          funnel?: string | null
           id?: string
           sales?: number
           scheduled?: number
@@ -232,6 +234,7 @@ export type Database = {
           conversion_rate?: number
           created_at?: string
           date?: string
+          funnel?: string | null
           id?: string
           sales?: number
           scheduled?: number
