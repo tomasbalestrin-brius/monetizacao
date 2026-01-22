@@ -1,5 +1,121 @@
 /**
- * Calcula dias úteis (segunda a sexta) entre duas datas
+ * Feriados nacionais fixos brasileiros (mês é 0-indexed)
+ */
+const FIXED_HOLIDAYS = [
+  { month: 0, day: 1 },   // Confraternização Universal
+  { month: 3, day: 21 },  // Tiradentes
+  { month: 4, day: 1 },   // Dia do Trabalho
+  { month: 8, day: 7 },   // Independência do Brasil
+  { month: 9, day: 12 },  // Nossa Senhora Aparecida
+  { month: 10, day: 2 },  // Finados
+  { month: 10, day: 15 }, // Proclamação da República
+  { month: 11, day: 25 }, // Natal
+];
+
+/**
+ * Dias adicionais não úteis (emendas, pontos facultativos específicos)
+ * Adicione aqui datas específicas da empresa
+ */
+const ADDITIONAL_NON_WORKING_DAYS: { year: number; month: number; day: number }[] = [
+  { year: 2025, month: 0, day: 2 }, // Emenda Ano Novo 2025
+  { year: 2026, month: 0, day: 2 }, // Emenda Ano Novo 2026
+];
+
+/**
+ * Calcula a data da Páscoa usando o algoritmo Computus
+ */
+function calculateEaster(year: number): Date {
+  const a = year % 19;
+  const b = Math.floor(year / 100);
+  const c = year % 100;
+  const d = Math.floor(b / 4);
+  const e = b % 4;
+  const f = Math.floor((b + 8) / 25);
+  const g = Math.floor((b - f + 1) / 3);
+  const h = (19 * a + b - d - g + 15) % 30;
+  const i = Math.floor(c / 4);
+  const k = c % 4;
+  const l = (32 + 2 * e + 2 * i - h - k) % 7;
+  const m = Math.floor((a + 11 * h + 22 * l) / 451);
+  const month = Math.floor((h + l - 7 * m + 114) / 31) - 1;
+  const day = ((h + l - 7 * m + 114) % 31) + 1;
+  return new Date(year, month, day);
+}
+
+/**
+ * Adiciona dias a uma data
+ */
+function addDays(date: Date, days: number): Date {
+  const result = new Date(date);
+  result.setDate(result.getDate() + days);
+  return result;
+}
+
+/**
+ * Retorna os feriados móveis de um ano (baseados na Páscoa)
+ */
+function getMovableHolidays(year: number): Date[] {
+  const easter = calculateEaster(year);
+  return [
+    addDays(easter, -48), // Segunda de Carnaval
+    addDays(easter, -47), // Terça de Carnaval
+    addDays(easter, -2),  // Sexta-feira Santa
+    addDays(easter, 60),  // Corpus Christi
+  ];
+}
+
+/**
+ * Retorna todos os feriados de um ano específico
+ */
+function getHolidaysForYear(year: number): Date[] {
+  const holidays: Date[] = [];
+  
+  // Adiciona feriados fixos
+  FIXED_HOLIDAYS.forEach(({ month, day }) => {
+    holidays.push(new Date(year, month, day));
+  });
+  
+  // Adiciona feriados móveis
+  holidays.push(...getMovableHolidays(year));
+  
+  // Adiciona dias não úteis adicionais do ano
+  ADDITIONAL_NON_WORKING_DAYS
+    .filter(d => d.year === year)
+    .forEach(({ month, day }) => {
+      holidays.push(new Date(year, month, day));
+    });
+  
+  return holidays;
+}
+
+/**
+ * Retorna todos os feriados em um intervalo de datas
+ */
+function getHolidaysInRange(start: Date, end: Date): Date[] {
+  const startYear = start.getFullYear();
+  const endYear = end.getFullYear();
+  const holidays: Date[] = [];
+  
+  for (let year = startYear; year <= endYear; year++) {
+    holidays.push(...getHolidaysForYear(year));
+  }
+  
+  return holidays;
+}
+
+/**
+ * Verifica se uma data é feriado
+ */
+function isHoliday(date: Date, holidays: Date[]): boolean {
+  return holidays.some(
+    h => h.getFullYear() === date.getFullYear() &&
+         h.getMonth() === date.getMonth() &&
+         h.getDate() === date.getDate()
+  );
+}
+
+/**
+ * Calcula dias úteis (segunda a sexta, excluindo feriados) entre duas datas
  */
 export function getWorkingDaysBetween(start: Date, end: Date): number {
   let count = 0;
@@ -9,11 +125,17 @@ export function getWorkingDaysBetween(start: Date, end: Date): number {
   const endDate = new Date(end);
   endDate.setHours(0, 0, 0, 0);
   
+  // Pré-calcula feriados do período
+  const holidays = getHolidaysInRange(start, end);
+  
   while (current <= endDate) {
     const dayOfWeek = current.getDay();
     // 0 = domingo, 6 = sábado
     if (dayOfWeek !== 0 && dayOfWeek !== 6) {
-      count++;
+      // Verifica se não é feriado
+      if (!isHoliday(current, holidays)) {
+        count++;
+      }
     }
     current.setDate(current.getDate() + 1);
   }
