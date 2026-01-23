@@ -1,6 +1,6 @@
 import React, { useState, useCallback } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { Phone, Target, TrendingUp, DollarSign, Users, Loader2 } from 'lucide-react';
+import { Phone, Target, TrendingUp, DollarSign, Users, Loader2, XCircle } from 'lucide-react';
 import { MetricCard } from './MetricCard';
 import { PeriodFilter } from './PeriodFilter';
 import { useSquadMetrics } from '@/hooks/useMetrics';
@@ -128,6 +128,40 @@ export function SquadPage({ squadSlug }: SquadPageProps) {
           icon={TrendingUp}
           isPercentage
         />
+      </div>
+
+      {/* Cancellation Metrics Section */}
+      <div className="space-y-3">
+        <h2 className="text-lg font-semibold text-muted-foreground">Cancelamentos</h2>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <MetricCard
+            title="Nº de Cancelamentos"
+            value={totals.cancellations}
+            icon={XCircle}
+            variant="destructive"
+          />
+          <MetricCard
+            title="% de Cancelamento"
+            value={totals.cancellationRate}
+            icon={TrendingUp}
+            isPercentage
+            variant="destructive"
+          />
+          <MetricCard
+            title="Valor Venda Cancelamento"
+            value={totals.cancellationValue}
+            icon={DollarSign}
+            isCurrency
+            variant="destructive"
+          />
+          <MetricCard
+            title="Valor Entrada Cancelamento"
+            value={totals.cancellationEntries}
+            icon={DollarSign}
+            isCurrency
+            variant="destructive"
+          />
+        </div>
       </div>
 
       {closers.length > 0 ? (

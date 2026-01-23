@@ -63,6 +63,10 @@ export interface SquadMetrics {
       revenueTrend: number;
       entriesTrend: number;
       conversion: number;
+      cancellations: number;
+      cancellationValue: number;
+      cancellationEntries: number;
+      cancellationRate: number;
     };
   }[];
   totals: {
@@ -73,6 +77,10 @@ export interface SquadMetrics {
     revenueTrend: number;
     entriesTrend: number;
     conversion: number;
+    cancellations: number;
+    cancellationValue: number;
+    cancellationEntries: number;
+    cancellationRate: number;
   };
 }
 
@@ -188,13 +196,17 @@ export function useSquadMetrics(periodStart?: string, periodEnd?: string) {
           sales: acc.sales + m.sales,
           revenue: acc.revenue + Number(m.revenue),
           entries: acc.entries + Number(m.entries),
+          cancellations: acc.cancellations + (m.cancellations || 0),
+          cancellationValue: acc.cancellationValue + Number(m.cancellation_value || 0),
+          cancellationEntries: acc.cancellationEntries + Number(m.cancellation_entries || 0),
         }),
-        { calls: 0, sales: 0, revenue: 0, entries: 0 }
+        { calls: 0, sales: 0, revenue: 0, entries: 0, cancellations: 0, cancellationValue: 0, cancellationEntries: 0 }
       );
       
       // Calcula tendência dinamicamente para cada closer
       const revenueTrend = calculateTrend(closerTotals.revenue, referenceDate);
       const entriesTrend = calculateTrend(closerTotals.entries, referenceDate);
+      const cancellationRate = closerTotals.sales > 0 ? (closerTotals.cancellations / closerTotals.sales) * 100 : 0;
       
       return {
         closer,
@@ -203,6 +215,7 @@ export function useSquadMetrics(periodStart?: string, periodEnd?: string) {
           revenueTrend,
           entriesTrend,
           conversion: closerTotals.calls > 0 ? (closerTotals.sales / closerTotals.calls) * 100 : 0,
+          cancellationRate,
         },
       };
     });
@@ -213,13 +226,17 @@ export function useSquadMetrics(periodStart?: string, periodEnd?: string) {
         sales: acc.sales + c.metrics.sales,
         revenue: acc.revenue + c.metrics.revenue,
         entries: acc.entries + c.metrics.entries,
+        cancellations: acc.cancellations + c.metrics.cancellations,
+        cancellationValue: acc.cancellationValue + c.metrics.cancellationValue,
+        cancellationEntries: acc.cancellationEntries + c.metrics.cancellationEntries,
       }),
-      { calls: 0, sales: 0, revenue: 0, entries: 0 }
+      { calls: 0, sales: 0, revenue: 0, entries: 0, cancellations: 0, cancellationValue: 0, cancellationEntries: 0 }
     );
 
     // Calcula tendência dinamicamente para o squad
     const squadRevenueTrend = calculateTrend(totals.revenue, referenceDate);
     const squadEntriesTrend = calculateTrend(totals.entries, referenceDate);
+    const squadCancellationRate = totals.sales > 0 ? (totals.cancellations / totals.sales) * 100 : 0;
 
     return {
       squad,
@@ -229,6 +246,7 @@ export function useSquadMetrics(periodStart?: string, periodEnd?: string) {
         revenueTrend: squadRevenueTrend,
         entriesTrend: squadEntriesTrend,
         conversion: totals.calls > 0 ? (totals.sales / totals.calls) * 100 : 0,
+        cancellationRate: squadCancellationRate,
       },
     };
   }) || [];

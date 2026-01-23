@@ -20,7 +20,7 @@ interface MetricCardProps {
   isPercentage?: boolean;
   showProgress?: boolean;
   className?: string;
-  variant?: 'default' | 'eagles' | 'alcateia' | 'sharks' | 'success' | 'warning';
+  variant?: 'default' | 'eagles' | 'alcateia' | 'sharks' | 'success' | 'warning' | 'destructive';
 }
 
 export function MetricCard({
@@ -67,6 +67,8 @@ export function MetricCard({
         return 'bg-success/20 text-success';
       case 'warning':
         return 'bg-warning/20 text-warning';
+      case 'destructive':
+        return 'bg-destructive/20 text-destructive';
       default:
         return 'bg-primary/10 text-primary';
     }
@@ -84,6 +86,8 @@ export function MetricCard({
         return 'bg-success';
       case 'warning':
         return 'bg-warning';
+      case 'destructive':
+        return 'bg-destructive';
       default:
         return 'bg-primary';
     }

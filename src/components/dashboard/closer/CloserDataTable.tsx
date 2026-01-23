@@ -68,6 +68,9 @@ export function CloserDataTable({ metrics }: CloserDataTableProps) {
               <TableHead className="text-xs font-bold uppercase tracking-wider text-muted-foreground text-right">Tend. Fat.</TableHead>
               <TableHead className="text-xs font-bold uppercase tracking-wider text-muted-foreground text-right">Entradas</TableHead>
               <TableHead className="text-xs font-bold uppercase tracking-wider text-muted-foreground text-right">Tend. Ent.</TableHead>
+              <TableHead className="text-xs font-bold uppercase tracking-wider text-destructive text-right">Cancel.</TableHead>
+              <TableHead className="text-xs font-bold uppercase tracking-wider text-destructive text-right">Vlr Cancel.</TableHead>
+              <TableHead className="text-xs font-bold uppercase tracking-wider text-destructive text-right">Ent. Cancel.</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -110,6 +113,17 @@ export function CloserDataTable({ metrics }: CloserDataTableProps) {
                   <TableCell className="text-right font-medium">{formatCurrency(metric.entries)}</TableCell>
                   <TableCell className="text-right text-muted-foreground text-sm">
                     {formatCurrency(metric.entries_trend || 0)}
+                  </TableCell>
+                  <TableCell className="text-right">
+                    <span className="px-2 py-0.5 rounded-md text-xs font-bold text-destructive bg-destructive/10">
+                      {metric.cancellations || 0}
+                    </span>
+                  </TableCell>
+                  <TableCell className="text-right text-destructive text-sm">
+                    {formatCurrency(metric.cancellation_value || 0)}
+                  </TableCell>
+                  <TableCell className="text-right text-destructive text-sm">
+                    {formatCurrency(metric.cancellation_entries || 0)}
                   </TableCell>
                 </TableRow>
               );

@@ -1,7 +1,7 @@
 import React, { useCallback, useState, useMemo } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
-import { ArrowLeft, Phone, Target, DollarSign, TrendingUp, ChevronLeft, ChevronRight } from 'lucide-react';
+import { ArrowLeft, Phone, Target, DollarSign, TrendingUp, ChevronLeft, ChevronRight, XCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { PeriodFilter } from '@/components/dashboard/PeriodFilter';
@@ -37,6 +37,8 @@ function calculateAggregatedMetrics(metrics: CloserMetricRecord[]) {
       conversionRate: 0,
       totalCancellations: 0,
       totalCancellationValue: 0,
+      totalCancellationEntries: 0,
+      cancellationRate: 0,
     };
   }
 
@@ -48,8 +50,10 @@ function calculateAggregatedMetrics(metrics: CloserMetricRecord[]) {
   const entriesTrend = metrics.reduce((sum, m) => sum + (m.entries_trend || 0), 0);
   const totalCancellations = metrics.reduce((sum, m) => sum + (m.cancellations || 0), 0);
   const totalCancellationValue = metrics.reduce((sum, m) => sum + (m.cancellation_value || 0), 0);
+  const totalCancellationEntries = metrics.reduce((sum, m) => sum + (m.cancellation_entries || 0), 0);
 
   const conversionRate = totalCalls > 0 ? (totalSales / totalCalls) * 100 : 0;
+  const cancellationRate = totalSales > 0 ? (totalCancellations / totalSales) * 100 : 0;
 
   return {
     totalCalls,
@@ -61,6 +65,8 @@ function calculateAggregatedMetrics(metrics: CloserMetricRecord[]) {
     conversionRate,
     totalCancellations,
     totalCancellationValue,
+    totalCancellationEntries,
+    cancellationRate,
   };
 }
 
@@ -270,9 +276,35 @@ export function CloserDetailPage({
                 isCurrency
               />
               <MetricCard
-                title="Cancelamentos"
+                title="Nº de Cancelamentos"
                 value={aggregatedMetrics?.totalCancellations || 0}
-                icon={Target}
+                icon={XCircle}
+                variant="destructive"
+              />
+            </div>
+
+            {/* Cancellation Metrics Row */}
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+              <MetricCard
+                title="% de Cancelamento"
+                value={aggregatedMetrics?.cancellationRate || 0}
+                icon={TrendingUp}
+                isPercentage
+                variant="destructive"
+              />
+              <MetricCard
+                title="Valor Venda Cancelamento"
+                value={aggregatedMetrics?.totalCancellationValue || 0}
+                icon={DollarSign}
+                isCurrency
+                variant="destructive"
+              />
+              <MetricCard
+                title="Valor Entrada Cancelamento"
+                value={aggregatedMetrics?.totalCancellationEntries || 0}
+                icon={DollarSign}
+                isCurrency
+                variant="destructive"
               />
             </div>
           </div>
