@@ -2,10 +2,10 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-cron-source',
 };
 
-// Mapeamento de funis para SDRs (nomes exatos da planilha)
+// Mapeamento de funis para SDRs
 const FUNNEL_MAPPING = [
   { funnel: 'Teste', sdr: 'Jaque', type: 'sdr' },
   { funnel: 'MPM', sdr: 'Jaque', type: 'sdr' },
@@ -25,9 +25,6 @@ const FUNNEL_MAPPING = [
   { funnel: 'Organico Cleiton', sdr: 'Nathali', type: 'sdr' },
 ];
 
-// Offsets de colunas por tipo de funil (relativo à coluna do título)
-// SDR normal: Ativados(0), Agendado(1), %Agend(2), AgendDia(3), Realizado(4), %Comp(5), Vendas(6), %Conv(7)
-// Social Selling: Ativados(0), Respostas(1), Agendado(2), %Agend(3), AgendDia(4), Realizado(5), %Comp(6), Vendas(7), %Conv(8)
 const COLUMN_OFFSETS = {
   sdr: {
     activated: 0,
@@ -38,7 +35,7 @@ const COLUMN_OFFSETS = {
   },
   social_selling: {
     activated: 0,
-    scheduled: 2,      // +1 devido à coluna "Respostas"
+    scheduled: 2,
     scheduled_same_day: 4,
     attended: 5,
     sales: 7,
@@ -52,13 +49,13 @@ interface FunnelBlock {
   sdr: string;
   type: string;
   startCol: number;
-  dataCol: number;  // Coluna onde está "Data" para este bloco
+  dataCol: number;
 }
 
 interface RawMetric {
   sdr: string;
   type: string;
-  funnel: string;  // Nome do funil de origem
+  funnel: string;
   date: string;
   activated: number;
   scheduled: number;
@@ -78,24 +75,12 @@ interface AggregatedMetric {
   conversion_rate: number;
 }
 
-// Parse percentage values like "25,31%" or "25.31%"
-function parsePercentage(value: string): number {
-  if (!value || value.includes('#DIV') || value.includes('#REF') || value.includes('#N/A')) {
-    return 0;
-  }
-  const cleaned = value.replace('%', '').replace(',', '.').trim();
-  const num = parseFloat(cleaned);
-  return isNaN(num) ? 0 : num;
-}
-
-// Parse numeric values - garantir inteiros para evitar erros de tipo no banco
 function parseNumber(value: unknown): number {
   if (typeof value === 'number') return Math.round(value);
   if (typeof value === 'string') {
     if (value.includes('#DIV') || value.includes('#REF') || value.includes('#N/A')) {
       return 0;
     }
-    // Remover % se existir e limpar formato
     const cleaned = value.replace('%', '').replace(',', '.').trim();
     const num = parseFloat(cleaned);
     return isNaN(num) ? 0 : Math.round(num);
@@ -103,20 +88,17 @@ function parseNumber(value: unknown): number {
   return 0;
 }
 
-// Parse date from "DD/MM" or "DD/MM/YYYY" format
 function parseDate(value: string): string | null {
   if (!value || typeof value !== 'string') return null;
   
   const trimmed = value.trim().toLowerCase();
   if (trimmed === 'total' || trimmed === '' || trimmed === 'data') return null;
   
-  // Try DD/MM/YYYY
   const fullMatch = value.match(/(\d{1,2})\/(\d{1,2})\/(\d{4})/);
   if (fullMatch) {
     return `${fullMatch[3]}-${fullMatch[2].padStart(2, '0')}-${fullMatch[1].padStart(2, '0')}`;
   }
   
-  // Try DD/MM (assume current year)
   const shortMatch = value.match(/^(\d{1,2})\/(\d{1,2})$/);
   if (shortMatch) {
     const year = new Date().getFullYear();
@@ -126,18 +108,14 @@ function parseDate(value: string): string | null {
   return null;
 }
 
-// Find funnel blocks by scanning the title row and header row
-// IMPORTANTE: Todos os funis compartilham a MESMA coluna de Data (coluna do primeiro bloco)
 function findFunnelBlocks(titleRow: string[], headerRow: string[]): { blocks: FunnelBlock[], sharedDataCol: number } {
   const blocks: FunnelBlock[] = [];
   
-  // Encontrar a coluna "Data" compartilhada (deve estar nas primeiras colunas)
   let sharedDataCol = 0;
   for (let col = 0; col < Math.min(headerRow.length, 10); col++) {
     const headerValue = headerRow[col]?.toString().trim().toLowerCase();
     if (headerValue === 'data') {
       sharedDataCol = col;
-      console.log(`Shared Data column found at column ${col}`);
       break;
     }
   }
@@ -146,7 +124,6 @@ function findFunnelBlocks(titleRow: string[], headerRow: string[]): { blocks: Fu
     const title = titleRow[col]?.toString().trim();
     if (!title || title === '') continue;
     
-    // Find matching funnel in mapping (case-insensitive)
     const mapping = FUNNEL_MAPPING.find(m => 
       m.funnel.toLowerCase() === title.toLowerCase()
     );
@@ -157,21 +134,17 @@ function findFunnelBlocks(titleRow: string[], headerRow: string[]): { blocks: Fu
         sdr: mapping.sdr,
         type: mapping.type,
         startCol: col,
-        dataCol: sharedDataCol, // Todos usam a mesma coluna de Data
+        dataCol: sharedDataCol,
       });
-      console.log(`Found funnel "${title}" at col ${col} -> SDR: ${mapping.sdr}`);
-    } else {
-      console.log(`Unknown funnel title at column ${col}: "${title}"`);
     }
   }
   
   return { blocks, sharedDataCol };
 }
 
-// Group metrics by SDR, funnel, and date (keeping each funnel separate)
 interface FunnelMetricData {
   type: string;
-  funnels: Map<string, Map<string, AggregatedMetric>>; // funnel -> date -> metrics
+  funnels: Map<string, Map<string, AggregatedMetric>>;
 }
 
 function groupBySDRAndFunnel(rawMetrics: RawMetric[]): Map<string, FunnelMetricData> {
@@ -200,7 +173,6 @@ function groupBySDRAndFunnel(rawMetrics: RawMetric[]): Map<string, FunnelMetricD
       conversion_rate: 0,
     };
     
-    // Sum values (in case of duplicates)
     existing.activated += metric.activated;
     existing.scheduled += metric.scheduled;
     existing.scheduled_same_day += metric.scheduled_same_day;
@@ -210,7 +182,6 @@ function groupBySDRAndFunnel(rawMetrics: RawMetric[]): Map<string, FunnelMetricD
     funnelDates.set(metric.date, existing);
   }
   
-  // Recalculate percentages
   for (const [, sdrData] of grouped) {
     for (const [, dates] of sdrData.funnels) {
       for (const [, metrics] of dates) {
@@ -228,7 +199,6 @@ function groupBySDRAndFunnel(rawMetrics: RawMetric[]): Map<string, FunnelMetricD
 }
 
 Deno.serve(async (req) => {
-  // Handle CORS preflight
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
@@ -241,6 +211,12 @@ Deno.serve(async (req) => {
     if (!googleApiKey) {
       throw new Error('GOOGLE_API_KEY not configured');
     }
+
+    // Check if this is a cron-triggered call
+    const cronSource = req.headers.get('X-Cron-Source');
+    const isCronCall = cronSource === 'pg_cron';
+
+    console.log(`SDR Sync triggered - Cron: ${isCronCall}`);
 
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
@@ -257,18 +233,18 @@ Deno.serve(async (req) => {
     }
 
     if (!config) {
-      throw new Error('No SDR sheets configuration found. Please connect a spreadsheet first.');
+      console.log('No SDR sheets config found - skipping sync');
+      return new Response(
+        JSON.stringify({ message: 'No spreadsheet configured', skipped: true }),
+        { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
     }
 
     const spreadsheetId = config.spreadsheet_id;
     console.log(`Syncing SDR data from spreadsheet: ${spreadsheetId}`);
-    console.log(`Reading from sheet: ${SHEET_NAME}`);
 
-    // Fetch data from the specific sheet "Indicadores Funis"
-    const range = `'${SHEET_NAME}'!A1:ZZ1000`; // Wide range to capture all funnel blocks
+    const range = `'${SHEET_NAME}'!A1:ZZ1000`;
     const dataUrl = `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/${encodeURIComponent(range)}?key=${googleApiKey}`;
-    
-    console.log(`Fetching data from: ${dataUrl.replace(googleApiKey, 'HIDDEN')}`);
     
     const dataResponse = await fetch(dataUrl);
 
@@ -287,82 +263,39 @@ Deno.serve(async (req) => {
 
     console.log(`Fetched ${rows.length} rows from sheet`);
 
-    // Row 2 (index 1) contains funnel titles
     const titleRow = rows[1] || [];
-    console.log(`Title row (row 2): ${titleRow.slice(0, 30).join(' | ')}...`);
-
-    // Row 3 (index 2) contains headers
     const headerRow = rows[2] || [];
-    console.log(`Header row (row 3): ${headerRow.slice(0, 30).join(' | ')}...`);
 
-    // Find funnel blocks using both title and header rows
     const { blocks: funnelBlocks, sharedDataCol } = findFunnelBlocks(titleRow, headerRow);
-    console.log(`Found ${funnelBlocks.length} funnel blocks, using shared Data column at ${sharedDataCol}`);
+    console.log(`Found ${funnelBlocks.length} funnel blocks`);
 
     if (funnelBlocks.length === 0) {
-      throw new Error('No matching funnel blocks found in the sheet. Check funnel names in row 2.');
+      throw new Error('No matching funnel blocks found in the sheet');
     }
 
-    // Process data rows (starting from row 4, index 3)
     const rawMetrics: RawMetric[] = [];
-    
-    // Usar apenas o primeiro bloco para detectar padrões de linha
-    const firstBlock = funnelBlocks[0];
-    let rowsProcessed = 0;
-    let rowsSkipped = 0;
-    let emptyRows = 0;
-    let totalRows = 0;
-    let headerRowsFound = 0;
-    
-    console.log(`\n=== Starting row processing from row 4 (index 3) to row ${rows.length} ===`);
     
     for (let rowIndex = 3; rowIndex < rows.length; rowIndex++) {
       const row = rows[rowIndex];
-      totalRows++;
       
-      // Log para linhas vazias
-      if (!row || row.length === 0) {
-        emptyRows++;
-        continue;
-      }
+      if (!row || row.length === 0) continue;
       
-      // Ler a data da coluna compartilhada UMA VEZ por linha
       const dateValue = row[sharedDataCol]?.toString().trim() || '';
       
-      // Verificar se é uma linha de header repetida (contém "Data")
-      if (dateValue.toLowerCase() === 'data') {
-        headerRowsFound++;
-        console.log(`Row ${rowIndex + 1}: HEADER ROW FOUND (${headerRowsFound}x) - new vertical block`);
-        continue;
-      }
+      if (dateValue.toLowerCase() === 'data') continue;
       
       const parsedDate = parseDate(dateValue);
       
-      // Log para primeiras linhas de debug
-      if (rowIndex < 8) {
-        const status = parsedDate ? 'valid' : (dateValue === '' ? 'empty' : `skip:${dateValue}`);
-        console.log(`Row ${rowIndex + 1}: Date="${dateValue}" -> ${status}`);
-      }
+      if (!parsedDate) continue;
       
-      // Se não tem data válida, pular toda a linha
-      if (!parsedDate) {
-        if (dateValue && dateValue.toLowerCase() !== 'total') {
-          rowsSkipped++;
-        }
-        continue;
-      }
-      
-      // Processar TODOS os blocos com a mesma data
       for (const block of funnelBlocks) {
         const titleCol = block.startCol;
-        
-        // Usar offsets corretos baseado no tipo do funil
         const offsets = COLUMN_OFFSETS[block.type as keyof typeof COLUMN_OFFSETS] || COLUMN_OFFSETS.sdr;
 
         const metric: RawMetric = {
           sdr: block.sdr,
           type: block.type,
-          funnel: block.funnel,  // Identificador do funil
+          funnel: block.funnel,
           date: parsedDate,
           activated: parseNumber(row[titleCol + offsets.activated]),
           scheduled: parseNumber(row[titleCol + offsets.scheduled]),
@@ -373,19 +306,10 @@ Deno.serve(async (req) => {
 
         rawMetrics.push(metric);
       }
-      
-      rowsProcessed++;
     }
 
-    console.log(`\n=== ROW PROCESSING SUMMARY ===`);
-    console.log(`Total rows scanned: ${totalRows}`);
-    console.log(`Empty rows: ${emptyRows}`);
-    console.log(`Header rows (vertical blocks): ${headerRowsFound + 1}`); // +1 for initial header
-    console.log(`Data rows processed: ${rowsProcessed}`);
-    console.log(`Rows skipped (invalid date): ${rowsSkipped}`);
     console.log(`Raw metrics extracted: ${rawMetrics.length}`);
 
-    // Group by SDR and funnel (keeping each funnel separate)
     const groupedData = groupBySDRAndFunnel(rawMetrics);
     console.log(`Grouped data for ${groupedData.size} SDRs`);
 
@@ -393,12 +317,8 @@ Deno.serve(async (req) => {
     let sdrsProcessed = 0;
     const errors: string[] = [];
 
-    // Process each SDR
     for (const [sdrName, sdrData] of groupedData) {
-      console.log(`Processing SDR: ${sdrName} (${sdrData.type}) with ${sdrData.funnels.size} funnel(s)`);
-      
       try {
-        // Get or create SDR
         const { data: existingSdr } = await supabase
           .from('sdrs')
           .select('id')
@@ -410,34 +330,26 @@ Deno.serve(async (req) => {
 
         if (existingSdr) {
           sdrId = existingSdr.id;
-          console.log(`Found existing SDR: ${sdrId}`);
         } else {
           const { data: newSdr, error: createError } = await supabase
             .from('sdrs')
-            .insert({
-              name: sdrName,
-              type: sdrData.type,
-            })
+            .insert({ name: sdrName, type: sdrData.type })
             .select('id')
             .single();
 
           if (createError) {
-            console.error(`Error creating SDR ${sdrName}:`, createError);
             errors.push(`Failed to create SDR: ${sdrName}`);
             continue;
           }
 
           sdrId = newSdr.id;
-          console.log(`Created new SDR: ${sdrName} -> ${sdrId}`);
         }
 
-        // Process each funnel separately
         for (const [funnelName, dateMetrics] of sdrData.funnels) {
-          // Prepare metrics for upsert with funnel identifier
           const metricsToUpsert = Array.from(dateMetrics.entries()).map(([date, metrics]) => ({
             sdr_id: sdrId,
             date,
-            funnel: funnelName,  // Include funnel name
+            funnel: funnelName,
             activated: metrics.activated,
             scheduled: metrics.scheduled,
             scheduled_rate: metrics.scheduled_rate,
@@ -449,17 +361,14 @@ Deno.serve(async (req) => {
             source: 'google_sheets',
           }));
 
-          console.log(`Upserting ${metricsToUpsert.length} metrics for ${sdrName} - ${funnelName}`);
-
           const { error: upsertError } = await supabase
             .from('sdr_metrics')
             .upsert(metricsToUpsert, {
-              onConflict: 'sdr_id,date,funnel',  // Updated constraint
+              onConflict: 'sdr_id,date,funnel',
               ignoreDuplicates: false,
             });
 
           if (upsertError) {
-            console.error(`Error upserting metrics for ${sdrName} - ${funnelName}:`, upsertError);
             errors.push(`Failed to save metrics for: ${sdrName} - ${funnelName}`);
           } else {
             totalMetricsImported += metricsToUpsert.length;
@@ -468,15 +377,13 @@ Deno.serve(async (req) => {
         
         sdrsProcessed++;
       } catch (sdrError) {
-        console.error(`Error processing SDR ${sdrName}:`, sdrError);
         errors.push(`Error processing: ${sdrName}`);
       }
     }
 
-    // Update sync status
     const syncMessage = errors.length > 0
-      ? `${sdrsProcessed} SDRs processados, ${totalMetricsImported} métricas importadas. Erros: ${errors.join('; ')}`
-      : `${sdrsProcessed} SDRs processados, ${totalMetricsImported} métricas importadas com sucesso.`;
+      ? `${sdrsProcessed} SDRs, ${totalMetricsImported} métricas. Erros: ${errors.length}. ${isCronCall ? '(Auto)' : ''}`
+      : `${sdrsProcessed} SDRs, ${totalMetricsImported} métricas. ${isCronCall ? '(Auto)' : ''}`;
 
     await supabase
       .from('sdr_sheets_config')
@@ -496,44 +403,18 @@ Deno.serve(async (req) => {
         message: syncMessage,
         sdrsProcessed,
         metricsImported: totalMetricsImported,
-        funnelsFound: funnelBlocks.map(b => b.funnel),
+        fromCron: isCronCall,
         errors: errors.length > 0 ? errors : undefined,
       }),
-      {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        status: 200,
-      }
+      { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
+
   } catch (error) {
-    console.error('Sync error:', error);
-
-    // Update config with error status
-    try {
-      const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
-      const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-      const supabase = createClient(supabaseUrl, supabaseServiceKey);
-
-      await supabase
-        .from('sdr_sheets_config')
-        .update({
-          sync_status: 'error',
-          sync_message: error instanceof Error ? error.message : 'Unknown error',
-          updated_at: new Date().toISOString(),
-        })
-        .neq('id', '00000000-0000-0000-0000-000000000000');
-    } catch (updateError) {
-      console.error('Error updating sync status:', updateError);
-    }
-
+    console.error('SDR Sync error:', error);
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
     return new Response(
-      JSON.stringify({
-        success: false,
-        error: error instanceof Error ? error.message : 'Unknown error',
-      }),
-      {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        status: 500,
-      }
+      JSON.stringify({ error: errorMessage }),
+      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   }
 });

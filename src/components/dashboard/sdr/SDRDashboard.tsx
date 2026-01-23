@@ -12,6 +12,7 @@ import { useSDRTotalMetrics, useSDRsWithMetrics } from '@/hooks/useSdrMetrics';
 import { useSDRSheetsConfig } from '@/hooks/useSDRSheetsConfig';
 import { PullToRefresh } from '@/components/ui/PullToRefresh';
 import { MetricCardSkeletonGrid, SDRCardSkeletonGrid } from '@/components/dashboard/skeletons';
+import { useRealtimeSDRMetrics, useRealtimeSyncStatus } from '@/hooks/useRealtimeMetrics';
 
 export function SDRDashboard() {
   const queryClient = useQueryClient();
@@ -19,6 +20,10 @@ export function SDRDashboard() {
   const [sdrType, setSdrType] = useState<SDRType>('sdr');
   const [periodStart, setPeriodStart] = useState<string | undefined>();
   const [periodEnd, setPeriodEnd] = useState<string | undefined>();
+
+  // Enable realtime subscriptions for automatic updates
+  useRealtimeSDRMetrics();
+  useRealtimeSyncStatus();
 
   // Check if viewing a specific SDR
   const selectedSdrId = searchParams.get('sdr');

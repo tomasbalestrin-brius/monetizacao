@@ -2,7 +2,7 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-cron-source',
 };
 
 interface MetricOffsets {
@@ -43,21 +43,21 @@ interface SheetData {
 }
 
 const DEFAULT_CONFIG: WeekBlockConfig = {
-  firstBlockStartRow: 5,    // Indicadores começam na linha 5
-  blockOffset: 13,          // 13 linhas entre cada bloco (5→18→31→44)
-  numberOfBlocks: 4,        // 4 semanas por aba
-  dateRow: 1,               // Data está 1 linha antes do bloco
+  firstBlockStartRow: 5,
+  blockOffset: 13,
+  numberOfBlocks: 4,
+  dateRow: 1,
   column: 'G',
   metrics: {
-    calls: 0,               // Offset 0 - Calls Realizadas
-    sales: 1,               // Offset 1 - Vendas Fechadas
-    revenue: 3,             // Offset 3 - Valor Total (pula Taxa de Conversão)
-    entries: 4,             // Offset 4 - Valor Entrada
-    revenueTrend: 5,        // Offset 5 - Tendência Valor Total
-    entriesTrend: 6,        // Offset 6 - Tendência Valor Entrada
-    cancellations: 7,       // Offset 7 - Número de Cancelamento
-    cancellationValue: 9,   // Offset 9 - Valor de venda Cancelamento
-    cancellationEntries: 10 // Offset 10 - Valor total de entrada Can
+    calls: 0,
+    sales: 1,
+    revenue: 3,
+    entries: 4,
+    revenueTrend: 5,
+    entriesTrend: 6,
+    cancellations: 7,
+    cancellationValue: 9,
+    cancellationEntries: 10
   }
 };
 
@@ -91,7 +91,6 @@ function normalizeConfig(rawConfig: unknown): WeekBlockConfig {
     };
   }
   
-  // Legacy format
   return {
     ...DEFAULT_CONFIG,
     column: (config.column as string) || DEFAULT_CONFIG.column,
@@ -120,8 +119,6 @@ function extractDateFromRow(rowData: unknown[], columnIndex: number): { start: s
     if (!cellValue) return null;
     
     const dateStr = String(cellValue);
-    
-    // Try to parse date range like "05/01 - 09/01" or "05/01/2026 - 09/01/2026"
     const rangeMatch = dateStr.match(/(\d{1,2})\/(\d{1,2})(?:\/(\d{2,4}))?\s*[-–]\s*(\d{1,2})\/(\d{1,2})(?:\/(\d{2,4}))?/);
     
     if (rangeMatch) {
@@ -152,10 +149,8 @@ function calculateWeekDates(weekNumber: number): { start: string; end: string } 
   const year = now.getFullYear();
   const month = now.getMonth();
   
-  // Calculate approximate week dates based on week number
-  const firstDayOfMonth = new Date(year, month, 1);
   const startDay = 1 + ((weekNumber - 1) * 7);
-  const endDay = Math.min(startDay + 4, new Date(year, month + 1, 0).getDate()); // 5 weekdays or end of month
+  const endDay = Math.min(startDay + 4, new Date(year, month + 1, 0).getDate());
   
   const startDate = new Date(year, month, startDay);
   const endDate = new Date(year, month, endDay);
@@ -172,14 +167,6 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const authHeader = req.headers.get('Authorization');
-    if (!authHeader) {
-      return new Response(
-        JSON.stringify({ error: 'Missing authorization header' }),
-        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
-
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY')!;
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
@@ -192,43 +179,64 @@ Deno.serve(async (req) => {
       );
     }
 
-    const supabase = createClient(supabaseUrl, supabaseAnonKey, {
-      global: { headers: { Authorization: authHeader } }
-    });
+    // Check if this is a cron-triggered call
+    const cronSource = req.headers.get('X-Cron-Source');
+    const isCronCall = cronSource === 'pg_cron';
+    const authHeader = req.headers.get('Authorization');
 
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
-    if (authError || !user) {
-      return new Response(
-        JSON.stringify({ error: 'Invalid token' }),
-        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
+    console.log(`Sync triggered - Cron: ${isCronCall}, Auth: ${authHeader ? 'present' : 'missing'}`);
 
-    // Check user role
-    const { data: roleData } = await supabase
-      .from('user_roles')
-      .select('role')
-      .eq('user_id', user.id)
-      .single();
+    // Use service role client for all operations
+    const adminClient = createClient(supabaseUrl, supabaseServiceKey);
 
-    if (!roleData || !['admin', 'manager'].includes(roleData.role)) {
-      return new Response(
-        JSON.stringify({ error: 'Insufficient permissions' }),
-        { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+    // For non-cron calls, validate user auth
+    if (!isCronCall) {
+      if (!authHeader) {
+        return new Response(
+          JSON.stringify({ error: 'Missing authorization header' }),
+          { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
+      const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+        global: { headers: { Authorization: authHeader } }
+      });
+
+      const { data: { user }, error: authError } = await supabase.auth.getUser();
+      if (authError || !user) {
+        return new Response(
+          JSON.stringify({ error: 'Invalid token' }),
+          { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
+      // Check user role
+      const { data: roleData } = await supabase
+        .from('user_roles')
+        .select('role')
+        .eq('user_id', user.id)
+        .single();
+
+      if (!roleData || !['admin', 'manager'].includes(roleData.role)) {
+        return new Response(
+          JSON.stringify({ error: 'Insufficient permissions' }),
+          { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
     }
 
     // Get Google Sheets config
-    const { data: configData, error: configError } = await supabase
+    const { data: configData, error: configError } = await adminClient
       .from('google_sheets_config')
       .select('*')
       .limit(1)
       .maybeSingle();
 
     if (configError || !configData) {
+      console.log('No Google Sheets config found - skipping sync');
       return new Response(
-        JSON.stringify({ error: 'Google Sheets not configured' }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        JSON.stringify({ message: 'No spreadsheet configured', skipped: true }),
+        { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
@@ -238,7 +246,6 @@ Deno.serve(async (req) => {
     console.log('Using block config:', JSON.stringify(blockConfig));
 
     // Update sync status
-    const adminClient = createClient(supabaseUrl, supabaseServiceKey);
     await adminClient
       .from('google_sheets_config')
       .update({ sync_status: 'syncing', sync_message: 'Buscando dados...' })
@@ -285,25 +292,19 @@ Deno.serve(async (req) => {
     
     console.log(`Found ${existingClosers?.length || 0} closers in database:`, existingClosers?.map(c => c.name));
     
-    // Create a map of lowercase names to closer records for case-insensitive matching
     const closerMap = new Map<string, { id: string; name: string; squad_id: string }>();
     for (const closer of existingClosers || []) {
       closerMap.set(closer.name.toLowerCase().trim(), closer);
     }
     
-    // Filter sheets to only include those matching existing closers
-    // Explicitly ignore: totals, SDRs, templates, etc.
     const validSheets: { sheetName: string; closer: { id: string; name: string; squad_id: string } }[] = [];
     
     for (const sheet of sheets) {
       const sheetName = sheet.properties.title;
       const sheetNameLower = sheetName.toLowerCase().trim();
       
-      // First: try direct match with closer name
       let matchedCloser = closerMap.get(sheetNameLower);
       
-      // If no direct match, check if it's a "TOTAL SQUAD [NAME]" tab
-      // that corresponds to a single-closer squad (e.g., "TOTAL SQUAD LEANDRO" -> Leandro)
       if (!matchedCloser && sheetNameLower.includes('total squad')) {
         for (const [closerNameLower, closer] of closerMap) {
           if (sheetNameLower.includes(closerNameLower)) {
@@ -314,48 +315,24 @@ Deno.serve(async (req) => {
         }
       }
       
-      // If we found a match, add to valid sheets
       if (matchedCloser) {
         console.log(`Sheet "${sheetName}" matched to closer "${matchedCloser.name}"`);
         validSheets.push({ sheetName, closer: matchedCloser });
         continue;
       }
       
-      // Apply exclusion filters for unmatched sheets
-      if (sheetNameLower.includes('total')) {
-        console.log(`Skipping sheet "${sheetName}" - contains "total" with no closer match`);
-        continue;
-      }
-      if (sheetNameLower.includes('squad')) {
-        console.log(`Skipping sheet "${sheetName}" - contains "squad" with no closer match`);
-        continue;
-      }
-      if (sheetNameLower.includes('sdr')) {
-        console.log(`Skipping sheet "${sheetName}" - contains "sdr"`);
-        continue;
-      }
-      if (sheetNameLower.includes('template') || sheetNameLower.includes('modelo')) {
-        console.log(`Skipping sheet "${sheetName}" - is a template`);
-        continue;
-      }
-      if (sheetNameLower.includes('dashboard') || sheetNameLower.includes('resumo')) {
-        console.log(`Skipping sheet "${sheetName}" - is a dashboard/summary`);
-        continue;
-      }
-      if (sheetNameLower.includes('ascen')) {
-        console.log(`Skipping sheet "${sheetName}" - is ascensão/cs`);
-        continue;
-      }
-      
-      console.log(`Sheet "${sheetName}" has no matching closer in database - skipping`);
+      if (sheetNameLower.includes('total')) continue;
+      if (sheetNameLower.includes('squad')) continue;
+      if (sheetNameLower.includes('sdr')) continue;
+      if (sheetNameLower.includes('template') || sheetNameLower.includes('modelo')) continue;
+      if (sheetNameLower.includes('dashboard') || sheetNameLower.includes('resumo')) continue;
+      if (sheetNameLower.includes('ascen')) continue;
     }
 
     console.log(`Processing ${validSheets.length} sheets with matching closers`);
 
     const allMetrics: SheetData[] = [];
     const columnIndex = blockConfig.column.toUpperCase().charCodeAt(0) - 'A'.charCodeAt(0);
-    
-    // Expand range to cover all blocks
     const maxRow = blockConfig.firstBlockStartRow + (blockConfig.numberOfBlocks * blockConfig.blockOffset) + 5;
     
     for (const { sheetName, closer } of validSheets) {
@@ -379,37 +356,29 @@ Deno.serve(async (req) => {
         continue;
       }
 
-      // Process each weekly block
       for (let blockIndex = 0; blockIndex < blockConfig.numberOfBlocks; blockIndex++) {
         const blockStartRow = blockConfig.firstBlockStartRow + (blockIndex * blockConfig.blockOffset);
         const weekNumber = blockIndex + 1;
         
-        console.log(`Processing week ${weekNumber} starting at row ${blockStartRow}`);
-        
-        // Helper to get value from a relative position within the block
-        // relativeRow is a 0-based offset from blockStartRow
         const getBlockValue = (relativeRow: number): number => {
-          const absoluteRow = blockStartRow + relativeRow - 1; // Convert to 0-indexed array position
+          const absoluteRow = blockStartRow + relativeRow - 1;
           if (absoluteRow < 0 || absoluteRow >= values.length) return 0;
           const rowData = values[absoluteRow];
           if (!rowData || columnIndex >= rowData.length) return 0;
           return parseNumericValue(rowData[columnIndex]);
         };
         
-        // Date is located 1 row BEFORE the indicator block
         const dateRowIndex = blockStartRow - 1 - 1;
         let periodDates = (dateRowIndex >= 0 && dateRowIndex < values.length)
           ? extractDateFromRow(values[dateRowIndex], columnIndex) 
           : null;
         
-        // If no dates found, calculate based on week number
         if (!periodDates) {
           periodDates = calculateWeekDates(weekNumber);
-          console.log(`Using calculated dates for week ${weekNumber}:`, periodDates);
         }
         
         const metrics: SheetData = {
-          closerName: closer.name, // Use the database closer name, not the sheet name
+          closerName: closer.name,
           weekNumber,
           periodStart: periodDates.start,
           periodEnd: periodDates.end,
@@ -424,33 +393,25 @@ Deno.serve(async (req) => {
           cancellationEntries: getBlockValue(blockConfig.metrics.cancellationEntries),
         };
         
-        // Only add if there's actual data
         if (metrics.calls > 0 || metrics.sales > 0 || metrics.revenue > 0) {
           allMetrics.push({ ...metrics, closerId: closer.id } as SheetData & { closerId: string });
-          console.log(`Week ${weekNumber} data for ${closer.name}:`, metrics);
-        } else {
-          console.log(`Skipping week ${weekNumber} for ${closer.name} - no data`);
         }
       }
     }
 
     console.log(`Total metrics to save: ${allMetrics.length}`);
 
-    // Save metrics to database - closers are already matched, no need to create
     let savedCount = 0;
     let errorCount = 0;
 
     for (const metric of allMetrics) {
-      // Get the closer ID from our earlier matching
       const matchedCloser = closerMap.get(metric.closerName.toLowerCase().trim());
       
       if (!matchedCloser) {
-        console.error(`No closer found for ${metric.closerName}`);
         errorCount++;
         continue;
       }
 
-      // Upsert metrics
       const { error: metricsError } = await adminClient
         .from('metrics')
         .upsert({
@@ -472,45 +433,44 @@ Deno.serve(async (req) => {
         });
 
       if (metricsError) {
-        console.error(`Failed to save metrics for ${metric.closerName} week ${metric.weekNumber}:`, metricsError);
+        console.error('Error saving metric:', metricsError);
         errorCount++;
       } else {
         savedCount++;
       }
     }
 
-    // Update sync status
-    const statusMessage = errorCount > 0 
-      ? `Sincronizado: ${savedCount} registros (${errorCount} erros)`
-      : `Sincronizado: ${savedCount} registros semanais`;
+    const syncMessage = errorCount > 0
+      ? `${savedCount} métricas sincronizadas, ${errorCount} erros. ${isCronCall ? '(Auto)' : ''}`
+      : `${savedCount} métricas sincronizadas com sucesso. ${isCronCall ? '(Auto)' : ''}`;
 
     await adminClient
       .from('google_sheets_config')
-      .update({ 
-        sync_status: 'success', 
-        sync_message: statusMessage,
+      .update({
+        sync_status: errorCount > 0 ? 'partial' : 'success',
+        sync_message: syncMessage,
         last_sync_at: new Date().toISOString(),
       })
       .eq('id', configData.id);
 
+    console.log(`Sync complete: ${syncMessage}`);
+
     return new Response(
-      JSON.stringify({ 
-        success: true, 
-        message: statusMessage,
-        details: {
-          sheetsProcessed: validSheets.length,
-          metricsFound: allMetrics.length,
-          metricsSaved: savedCount,
-          errors: errorCount,
-        }
+      JSON.stringify({
+        success: true,
+        message: syncMessage,
+        savedCount,
+        errorCount,
+        fromCron: isCronCall,
       }),
       { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
 
   } catch (error) {
     console.error('Sync error:', error);
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
     return new Response(
-      JSON.stringify({ error: 'Internal server error', details: (error as Error).message }),
+      JSON.stringify({ error: errorMessage }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   }

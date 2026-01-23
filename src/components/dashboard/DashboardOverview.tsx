@@ -8,8 +8,12 @@ import { PeriodFilter } from './PeriodFilter';
 import { useTotalMetrics } from '@/hooks/useMetrics';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
+import { useRealtimeMetrics, useRealtimeSyncStatus } from '@/hooks/useRealtimeMetrics';
 
 export function DashboardOverview() {
+  // Enable realtime subscriptions for automatic updates
+  useRealtimeMetrics();
+  useRealtimeSyncStatus();
   const navigate = useNavigate();
   const { isAdmin } = useAuth();
   const [periodStart, setPeriodStart] = useState<string | undefined>();
