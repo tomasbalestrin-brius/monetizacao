@@ -70,13 +70,18 @@ function extractSpreadsheetId(input: string): string {
 }
 
 function normalizeConfig(rawConfig: unknown): WeekBlockConfig {
+  console.log('Raw config from DB:', JSON.stringify(rawConfig));
+  
   if (!rawConfig || typeof rawConfig !== 'object') {
+    console.log('No config found, using defaults');
     return { ...DEFAULT_CONFIG };
   }
   
   const config = rawConfig as Record<string, unknown>;
   
+  // New format: has 'metrics' nested object
   if ('metrics' in config && typeof config.metrics === 'object') {
+    console.log('Using new structured config format');
     return {
       ...DEFAULT_CONFIG,
       firstBlockStartRow: (config.firstBlockStartRow as number) || DEFAULT_CONFIG.firstBlockStartRow,
@@ -91,6 +96,31 @@ function normalizeConfig(rawConfig: unknown): WeekBlockConfig {
     };
   }
   
+  // Legacy format: flat object with metric offsets directly (e.g., { calls: 7, sales: 14 })
+  // Check if it has numeric values that look like metric offsets
+  const hasLegacyMetrics = 'calls' in config || 'sales' in config || 'revenue' in config;
+  
+  if (hasLegacyMetrics) {
+    console.log('Detected legacy flat config format, converting to new format');
+    return {
+      ...DEFAULT_CONFIG,
+      column: (config.column as string) || DEFAULT_CONFIG.column,
+      metrics: {
+        calls: (config.calls as number) ?? DEFAULT_CONFIG.metrics.calls,
+        sales: (config.sales as number) ?? DEFAULT_CONFIG.metrics.sales,
+        revenue: (config.revenue as number) ?? DEFAULT_CONFIG.metrics.revenue,
+        entries: (config.entries as number) ?? DEFAULT_CONFIG.metrics.entries,
+        revenueTrend: (config.revenueTrend as number) ?? DEFAULT_CONFIG.metrics.revenueTrend,
+        entriesTrend: (config.entriesTrend as number) ?? DEFAULT_CONFIG.metrics.entriesTrend,
+        cancellations: (config.cancellations as number) ?? DEFAULT_CONFIG.metrics.cancellations,
+        cancellationValue: (config.cancellationValue as number) ?? DEFAULT_CONFIG.metrics.cancellationValue,
+        cancellationEntries: (config.cancellationEntries as number) ?? DEFAULT_CONFIG.metrics.cancellationEntries,
+      }
+    };
+  }
+  
+  // Fallback: just use column if present
+  console.log('Using defaults with column override');
   return {
     ...DEFAULT_CONFIG,
     column: (config.column as string) || DEFAULT_CONFIG.column,
@@ -393,8 +423,12 @@ Deno.serve(async (req) => {
           cancellationEntries: getBlockValue(blockConfig.metrics.cancellationEntries),
         };
         
+        console.log(`[${closer.name}] Week ${weekNumber} (${periodDates.start} - ${periodDates.end}): calls=${metrics.calls}, sales=${metrics.sales}, revenue=${metrics.revenue}`);
+        
         if (metrics.calls > 0 || metrics.sales > 0 || metrics.revenue > 0) {
           allMetrics.push({ ...metrics, closerId: closer.id } as SheetData & { closerId: string });
+        } else {
+          console.log(`[${closer.name}] Week ${weekNumber}: Skipped - all metrics are zero`);
         }
       }
     }
