@@ -337,6 +337,17 @@ Deno.serve(async (req) => {
     const metadata = await metadataResponse.json();
     const sheets = metadata.sheets || [];
     
+    // Fetch squads that have their own configuration (should be skipped by global sync)
+    const { data: squadConfigs } = await adminClient
+      .from('squad_sheets_config')
+      .select('squad_id');
+    
+    const squadsWithOwnConfig = new Set(
+      (squadConfigs || []).map(c => c.squad_id)
+    );
+    
+    console.log(`[sync-google-sheets] Squads with own config (will be skipped): ${squadsWithOwnConfig.size} squads`);
+    
     // Fetch existing closers from database
     const { data: existingClosers, error: closersError } = await adminClient
       .from('closers')
@@ -363,6 +374,7 @@ Deno.serve(async (req) => {
     }
     
     const validSheets: { sheetName: string; closer: { id: string; name: string; squad_id: string } }[] = [];
+    let skippedDueToSquadConfig = 0;
     
     for (const sheet of sheets) {
       const sheetName = sheet.properties.title;
@@ -381,6 +393,13 @@ Deno.serve(async (req) => {
       }
       
       if (matchedCloser) {
+        // NEW: Skip closers from squads that have their own config
+        if (squadsWithOwnConfig.has(matchedCloser.squad_id)) {
+          console.log(`[sync-google-sheets] Skipping ${matchedCloser.name} - squad has own config`);
+          skippedDueToSquadConfig++;
+          continue;
+        }
+        
         console.log(`Sheet "${sheetName}" matched to closer "${matchedCloser.name}"`);
         validSheets.push({ sheetName, closer: matchedCloser });
         continue;
@@ -394,7 +413,7 @@ Deno.serve(async (req) => {
       if (sheetNameLower.includes('ascen')) continue;
     }
 
-    console.log(`Processing ${validSheets.length} sheets with matching closers`);
+    console.log(`Processing ${validSheets.length} sheets with matching closers (skipped ${skippedDueToSquadConfig} closers from squads with own config)`);
 
     const allMetrics: SheetData[] = [];
     const columnIndex = blockConfig.column.toUpperCase().charCodeAt(0) - 'A'.charCodeAt(0);
