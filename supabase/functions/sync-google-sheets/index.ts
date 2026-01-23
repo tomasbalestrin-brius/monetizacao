@@ -423,12 +423,24 @@ Deno.serve(async (req) => {
           cancellationEntries: getBlockValue(blockConfig.metrics.cancellationEntries),
         };
         
-        console.log(`[${closer.name}] Week ${weekNumber} (${periodDates.start} - ${periodDates.end}): calls=${metrics.calls}, sales=${metrics.sales}, revenue=${metrics.revenue}`);
+        console.log(`[${closer.name}] Week ${weekNumber} (${periodDates.start} - ${periodDates.end}): calls=${metrics.calls}, sales=${metrics.sales}, revenue=${metrics.revenue}, entries=${metrics.entries}, cancellationValue=${metrics.cancellationValue}`);
         
-        if (metrics.calls > 0 || metrics.sales > 0 || metrics.revenue > 0) {
+        // Salva se QUALQUER métrica tiver valor > 0 (coleta dados parciais)
+        const hasAnyValue = 
+          metrics.calls > 0 ||
+          metrics.sales > 0 ||
+          metrics.revenue > 0 ||
+          metrics.entries > 0 ||
+          metrics.revenueTrend > 0 ||
+          metrics.entriesTrend > 0 ||
+          metrics.cancellations > 0 ||
+          metrics.cancellationValue > 0 ||
+          metrics.cancellationEntries > 0;
+        
+        if (hasAnyValue) {
           allMetrics.push({ ...metrics, closerId: closer.id } as SheetData & { closerId: string });
         } else {
-          console.log(`[${closer.name}] Week ${weekNumber}: Skipped - all metrics are zero`);
+          console.log(`[${closer.name}] Week ${weekNumber}: Skipped - ALL metrics are zero`);
         }
       }
     }
