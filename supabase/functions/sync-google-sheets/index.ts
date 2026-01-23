@@ -421,6 +421,23 @@ Deno.serve(async (req) => {
         continue;
       }
 
+      // DEBUG: Log raw content of configured column for first 25 rows
+      const debugRows = values.slice(0, 25).map((row: unknown[], idx: number) => {
+        const colValue = row[columnIndex] || '';
+        return `Row${idx + 1}:"${colValue}"`;
+      });
+      console.log(`[DEBUG ${closer.name}] Column ${blockConfig.column} raw content:`, debugRows.join(' | '));
+      
+      // DEBUG: Also log columns B-G for first 15 rows to see full structure
+      console.log(`[DEBUG ${closer.name}] Full row structure (first 15 rows, columns A-G):`);
+      for (let i = 0; i < Math.min(15, values.length); i++) {
+        const row = values[i] as unknown[];
+        const rowPreview = ['A', 'B', 'C', 'D', 'E', 'F', 'G'].map((col, colIdx) => 
+          `${col}:"${row[colIdx] || ''}"`
+        ).join(' | ');
+        console.log(`  Row ${i + 1}: ${rowPreview}`);
+      }
+
       for (let blockIndex = 0; blockIndex < blockConfig.numberOfBlocks; blockIndex++) {
         const blockStartRow = blockConfig.firstBlockStartRow + (blockIndex * blockConfig.blockOffset);
         const weekNumber = blockIndex + 1;
