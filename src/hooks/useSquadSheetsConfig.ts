@@ -69,7 +69,7 @@ export function useSaveSquadSheetsConfig(squadSlug: string) {
       const defaultRowMapping = {
         column: 'H',
         firstBlockStartRow: 5,
-        blockOffset: 13,
+        blockOffset: 12,
         numberOfBlocks: 4,
         dateRow: 1,
         metrics: {
