@@ -177,6 +177,9 @@ export function useSquadMetrics(periodStart?: string, periodEnd?: string) {
   const squadMetrics: SquadMetrics[] = squads?.map(squad => {
     const squadCloserMetrics = metrics?.filter(m => m.closer?.squad_id === squad.id) || [];
     
+    // Alcateia NÃO aplica valores líquidos - exibe bruto
+    const isAlcateia = squad.slug.toLowerCase() === 'alcateia';
+    
     // Group by closer
     const closerMap = new Map<string, { closer: Closer; metrics: Metric[] }>();
     squadCloserMetrics.forEach(m => {
@@ -203,12 +206,18 @@ export function useSquadMetrics(periodStart?: string, periodEnd?: string) {
         { calls: 0, sales: 0, revenue: 0, entries: 0, cancellations: 0, cancellationValue: 0, cancellationEntries: 0 }
       );
       
-      // Aplicar desconto de cancelamentos - valores líquidos
-      const netRevenue = closerTotals.revenue - closerTotals.cancellationValue;
-      const netEntries = closerTotals.entries - closerTotals.cancellationEntries;
-      const netSales = closerTotals.sales - closerTotals.cancellations;
+      // Aplicar desconto de cancelamentos EXCETO para Alcateia
+      const netRevenue = isAlcateia 
+        ? closerTotals.revenue 
+        : closerTotals.revenue - closerTotals.cancellationValue;
+      const netEntries = isAlcateia 
+        ? closerTotals.entries 
+        : closerTotals.entries - closerTotals.cancellationEntries;
+      const netSales = isAlcateia 
+        ? closerTotals.sales 
+        : closerTotals.sales - closerTotals.cancellations;
       
-      // Calcula tendência dinamicamente para cada closer (baseado nos valores líquidos)
+      // Calcula tendência dinamicamente para cada closer (baseado nos valores líquidos/brutos conforme squad)
       const revenueTrend = calculateTrend(netRevenue, referenceDate);
       const entriesTrend = calculateTrend(netEntries, referenceDate);
       
@@ -219,9 +228,9 @@ export function useSquadMetrics(periodStart?: string, periodEnd?: string) {
         closer,
         metrics: {
           ...closerTotals,
-          sales: netSales,           // Vendas líquidas
-          revenue: netRevenue,       // Valor líquido
-          entries: netEntries,       // Valor líquido
+          sales: netSales,
+          revenue: netRevenue,
+          entries: netEntries,
           revenueTrend,
           entriesTrend,
           conversion: closerTotals.calls > 0 ? (netSales / closerTotals.calls) * 100 : 0,
@@ -246,8 +255,11 @@ export function useSquadMetrics(periodStart?: string, periodEnd?: string) {
     // Calcula tendência dinamicamente para o squad
     const squadRevenueTrend = calculateTrend(totals.revenue, referenceDate);
     const squadEntriesTrend = calculateTrend(totals.entries, referenceDate);
-    // Taxa de cancelamento baseada nas vendas brutas (soma cancellations / soma (sales + cancellations))
-    const grossSales = totals.sales + totals.cancellations;
+    // Taxa de cancelamento baseada nas vendas brutas
+    // Para squads com valores líquidos, precisa recalcular grossSales
+    const grossSales = isAlcateia 
+      ? totals.sales  // Já é bruto
+      : totals.sales + totals.cancellations;  // Líquido + cancelamentos = bruto
     const squadCancellationRate = grossSales > 0 ? (totals.cancellations / grossSales) * 100 : 0;
 
     return {

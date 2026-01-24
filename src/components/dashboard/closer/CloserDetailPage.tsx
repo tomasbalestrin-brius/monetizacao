@@ -36,7 +36,7 @@ interface CloserDetailPageProps {
 }
 
 // Calculate aggregated metrics from an array of metrics
-function calculateAggregatedMetrics(metrics: CloserMetricRecord[]) {
+function calculateAggregatedMetrics(metrics: CloserMetricRecord[], squadSlug: string) {
   if (metrics.length === 0) {
     return {
       totalCalls: 0,
@@ -53,6 +53,9 @@ function calculateAggregatedMetrics(metrics: CloserMetricRecord[]) {
     };
   }
 
+  // Alcateia NÃO aplica valores líquidos - exibe bruto
+  const isAlcateia = squadSlug.toLowerCase() === 'alcateia';
+
   const totalCalls = metrics.reduce((sum, m) => sum + (m.calls || 0), 0);
   const grossSales = metrics.reduce((sum, m) => sum + (m.sales || 0), 0);
   const grossRevenue = metrics.reduce((sum, m) => sum + (m.revenue || 0), 0);
@@ -61,25 +64,25 @@ function calculateAggregatedMetrics(metrics: CloserMetricRecord[]) {
   const totalCancellationValue = metrics.reduce((sum, m) => sum + (m.cancellation_value || 0), 0);
   const totalCancellationEntries = metrics.reduce((sum, m) => sum + (m.cancellation_entries || 0), 0);
 
-  // Valores líquidos (descontando cancelamentos)
-  const totalSales = grossSales - totalCancellations;
-  const totalRevenue = grossRevenue - totalCancellationValue;
-  const totalEntries = grossEntries - totalCancellationEntries;
+  // Valores líquidos EXCETO para Alcateia
+  const totalSales = isAlcateia ? grossSales : grossSales - totalCancellations;
+  const totalRevenue = isAlcateia ? grossRevenue : grossRevenue - totalCancellationValue;
+  const totalEntries = isAlcateia ? grossEntries : grossEntries - totalCancellationEntries;
 
   // Tendências baseadas nos valores brutos da planilha
   const revenueTrend = metrics.reduce((sum, m) => sum + (m.revenue_trend || 0), 0);
   const entriesTrend = metrics.reduce((sum, m) => sum + (m.entries_trend || 0), 0);
 
-  // Conversão baseada em vendas líquidas
+  // Conversão baseada nos valores calculados (líquidos ou brutos conforme squad)
   const conversionRate = totalCalls > 0 ? (totalSales / totalCalls) * 100 : 0;
-  // Taxa de cancelamento baseada em vendas brutas
+  // Taxa de cancelamento sempre baseada em vendas brutas
   const cancellationRate = grossSales > 0 ? (totalCancellations / grossSales) * 100 : 0;
 
   return {
     totalCalls,
     totalSales,
-    totalRevenue,       // Valor líquido
-    totalEntries,       // Valor líquido
+    totalRevenue,
+    totalEntries,
     revenueTrend,
     entriesTrend,
     conversionRate,
@@ -124,7 +127,7 @@ export function CloserDetailPage({
   }, [closers, squadSlug]);
 
   const closer = squadClosers.find((c) => c.id === closerId);
-  const aggregatedMetrics = metrics && metrics.length > 0 ? calculateAggregatedMetrics(metrics) : null;
+  const aggregatedMetrics = metrics && metrics.length > 0 ? calculateAggregatedMetrics(metrics, squadSlug) : null;
 
   // Swipe navigation between closers in the same squad
   const handleNavigateToCloser = useCallback((id: string) => {
