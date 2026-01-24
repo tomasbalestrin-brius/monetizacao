@@ -1,7 +1,7 @@
 import React, { useCallback, useState, useMemo } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
-import { ArrowLeft, Phone, Target, DollarSign, TrendingUp, ChevronLeft, ChevronRight, XCircle } from 'lucide-react';
+import { ArrowLeft, Phone, Target, DollarSign, TrendingUp, ChevronLeft, ChevronRight, XCircle, Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { PeriodFilter } from '@/components/dashboard/PeriodFilter';
@@ -9,6 +9,7 @@ import { PullToRefresh } from '@/components/ui/PullToRefresh';
 import { MetricCard } from '@/components/dashboard/MetricCard';
 import { CloserWeeklyComparisonChart } from './CloserWeeklyComparisonChart';
 import { CloserDataTable } from './CloserDataTable';
+import { SquadMetricsDialog } from '@/components/dashboard/SquadMetricsDialog';
 import { useClosers, useCloserMetrics, type CloserMetricRecord } from '@/hooks/useMetrics';
 import { useSwipeNavigation } from '@/hooks/useSwipeNavigation';
 import { useRealtimeMetrics, useRealtimeSyncStatus } from '@/hooks/useRealtimeMetrics';
@@ -80,6 +81,7 @@ export function CloserDetailPage({
 }: CloserDetailPageProps) {
   const queryClient = useQueryClient();
   const [, setSearchParams] = useSearchParams();
+  const [isMetricsDialogOpen, setIsMetricsDialogOpen] = useState(false);
   
   // Enable realtime subscriptions for automatic data refresh
   useRealtimeMetrics();
@@ -202,6 +204,16 @@ export function CloserDetailPage({
                 </Button>
               </div>
             )}
+
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setIsMetricsDialogOpen(true)}
+              className="gap-2"
+            >
+              <Plus size={16} />
+              Adicionar
+            </Button>
             
             <PeriodFilter
               periodStart={periodStart}
@@ -210,6 +222,14 @@ export function CloserDetailPage({
             />
           </div>
         </div>
+
+        {/* Dialog for manual metric entry */}
+        <SquadMetricsDialog
+          open={isMetricsDialogOpen}
+          onOpenChange={setIsMetricsDialogOpen}
+          squadSlug={squadSlug}
+          defaultCloserId={closerId}
+        />
 
         {/* Swipe hint for mobile */}
         {totalItems > 1 && (

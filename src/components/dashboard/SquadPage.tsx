@@ -1,6 +1,7 @@
 import React, { useState, useCallback } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { Phone, Target, TrendingUp, DollarSign, Users, Loader2, XCircle } from 'lucide-react';
+import { Phone, Target, TrendingUp, DollarSign, Users, Loader2, XCircle, Plus } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 import { MetricCard } from './MetricCard';
 import { PeriodFilter } from './PeriodFilter';
 import { useSquadMetrics } from '@/hooks/useMetrics';
@@ -9,6 +10,7 @@ import { CloserDetailPage } from './closer/CloserDetailPage';
 import { CloserCard } from './closer/CloserCard';
 import { SquadSheetsConfig } from './SquadSheetsConfig';
 import { SquadSyncButton } from './SquadSyncButton';
+import { SquadMetricsDialog } from './SquadMetricsDialog';
 
 interface SquadPageProps {
   squadSlug: string;
@@ -24,6 +26,7 @@ export function SquadPage({ squadSlug }: SquadPageProps) {
   
   const [periodStart, setPeriodStart] = useState<string | undefined>();
   const [periodEnd, setPeriodEnd] = useState<string | undefined>();
+  const [isMetricsDialogOpen, setIsMetricsDialogOpen] = useState(false);
   const { squadMetrics, isLoading, error } = useSquadMetrics(periodStart, periodEnd);
 
   const currentSquad = squadMetrics.find(
@@ -83,6 +86,15 @@ export function SquadPage({ squadSlug }: SquadPageProps) {
         <div className="flex items-center gap-4">
           <h1 className="text-3xl font-bold text-foreground">Squad {squad.name}</h1>
           <SquadSyncButton squadSlug={squadSlug} />
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setIsMetricsDialogOpen(true)}
+            className="gap-2"
+          >
+            <Plus size={16} />
+            Adicionar Métrica
+          </Button>
         </div>
         <PeriodFilter
           periodStart={periodStart}
@@ -90,6 +102,13 @@ export function SquadPage({ squadSlug }: SquadPageProps) {
           onPeriodChange={handlePeriodChange}
         />
       </div>
+
+      {/* Dialog for manual metric entry */}
+      <SquadMetricsDialog
+        open={isMetricsDialogOpen}
+        onOpenChange={setIsMetricsDialogOpen}
+        squadSlug={squadSlug}
+      />
 
       {/* Squad-specific sheets configuration */}
       <SquadSheetsConfig squadSlug={squadSlug} squadName={squad.name} variant="compact" />
