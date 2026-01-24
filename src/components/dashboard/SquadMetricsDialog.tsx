@@ -1,0 +1,76 @@
+import React from 'react';
+import { format } from 'date-fns';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import { SquadMetricsForm, type SquadMetricsFormValues } from './SquadMetricsForm';
+import { useCreateMetric, useSquads } from '@/hooks/useMetrics';
+
+interface SquadMetricsDialogProps {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  squadSlug: string;
+  defaultCloserId?: string;
+}
+
+export function SquadMetricsDialog({ 
+  open, 
+  onOpenChange, 
+  squadSlug,
+  defaultCloserId 
+}: SquadMetricsDialogProps) {
+  const createMetric = useCreateMetric();
+  const { data: squads } = useSquads();
+  
+  const squad = squads?.find(s => s.slug.toLowerCase() === squadSlug.toLowerCase());
+
+  const handleSubmit = async (
+    values: SquadMetricsFormValues, 
+    period: { start: Date; end: Date }
+  ) => {
+    const payload = {
+      closer_id: values.closer_id,
+      period_start: format(period.start, 'yyyy-MM-dd'),
+      period_end: format(period.end, 'yyyy-MM-dd'),
+      calls: values.calls,
+      sales: values.sales,
+      revenue: values.revenue,
+      entries: values.entries,
+      revenue_trend: values.revenue_trend ?? 0,
+      entries_trend: values.entries_trend ?? 0,
+      cancellations: values.cancellations ?? 0,
+      cancellation_value: values.cancellation_value ?? 0,
+      cancellation_entries: values.cancellation_entries ?? 0,
+      source: 'manual',
+    };
+
+    await createMetric.mutateAsync(payload);
+    onOpenChange(false);
+  };
+
+  if (!squad) return null;
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-[500px] max-h-[90vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle>Adicionar Métrica Manual</DialogTitle>
+          <DialogDescription>
+            Insira os dados de desempenho para um closer do Squad {squad.name}.
+          </DialogDescription>
+        </DialogHeader>
+        
+        <SquadMetricsForm
+          squadId={squad.id}
+          defaultCloserId={defaultCloserId}
+          onSubmit={handleSubmit}
+          isLoading={createMetric.isPending}
+        />
+      </DialogContent>
+    </Dialog>
+  );
+}

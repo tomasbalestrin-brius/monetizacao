@@ -287,12 +287,29 @@ export function useTotalMetrics(periodStart?: string, periodEnd?: string) {
   };
 }
 
+// Type for creating a new metric with all optional trend/cancellation fields
+export interface CreateMetricPayload {
+  closer_id: string;
+  period_start: string;
+  period_end: string;
+  calls: number;
+  sales: number;
+  revenue: number;
+  entries: number;
+  source: string;
+  revenue_trend?: number;
+  entries_trend?: number;
+  cancellations?: number;
+  cancellation_value?: number;
+  cancellation_entries?: number;
+}
+
 export function useCreateMetric() {
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
   return useMutation({
-    mutationFn: async (metric: Omit<Metric, 'id' | 'closer'>) => {
+    mutationFn: async (metric: CreateMetricPayload) => {
       const { data, error } = await supabase
         .from('metrics')
         .insert(metric)
@@ -304,6 +321,7 @@ export function useCreateMetric() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['metrics'] });
+      queryClient.invalidateQueries({ queryKey: ['closer-metrics'] });
       toast({
         title: 'Métrica adicionada',
         description: 'A métrica foi salva com sucesso.',
