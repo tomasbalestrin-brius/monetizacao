@@ -1,81 +1,200 @@
 
-Objetivo: corrigir a “Taxa de Conversão” do Squad **Alcateia**, que está errada porque os valores de **calls** e **sales** estão sendo importados de linhas erradas da planilha (o que gera vendas gigantes e conversões absurdas).
 
-## Diagnóstico (o que está acontecendo)
-- A função de sincronização por squad (`sync-squad-sheets`) já foi ajustada para ter fallback `DEFAULT_CONFIG.blockOffset = 12`.
-- Porém, o Alcateia (e também Sharks) **já tem configuração salva no backend** com `row_mapping.blockOffset = 13`.
-- Como a função **prioriza o valor salvo no backend**, ela continua usando `13` e lendo as linhas erradas.
+# Plano: Adicionar Inserção Manual de Dados
 
-Evidência (backend agora):
-- `squad_sheets_config` do **alcateia** está com `blockOffset: 13` (igual ao sharks).
-- A tabela `metrics` mostra valores claramente “deslocados”, por exemplo:
-  - `sales` com 45k / 50k e `revenue = 0`, o que indica que o “sales” está pegando uma linha de dinheiro ou outro campo.
+## Objetivo
 
-## O que vamos implementar (correção definitiva)
-### 1) Corrigir a configuração salva do Alcateia (e Sharks) no backend
-Criar uma migração para:
-1. Atualizar o `row_mapping.blockOffset` de `13` → `12` **para alcateia e sharks** (sem mexer em outros squads).
-2. Ajustar o **default** da coluna `row_mapping` na tabela `squad_sheets_config` para já nascer com `blockOffset: 12` daqui pra frente.
+Implementar funcionalidade de adição manual de dados para métricas de closers, com opção de selecionar o tipo de período: **Dia**, **Semana** ou **Mês**.
 
-SQL (migração):
-- Atualizar registros existentes (alcateia/sharks):
-```sql
-update public.squad_sheets_config c
-set row_mapping = jsonb_set(c.row_mapping, '{blockOffset}', '12'::jsonb, true),
-    updated_at = now()
-from public.squads s
-where c.squad_id = s.id
-  and s.slug in ('alcateia', 'sharks');
+## Localização da Funcionalidade
+
+A opção de inserção manual estará disponível em:
+1. **Página do Squad** - Botão "Adicionar Métrica" ao lado do botão "Sincronizar"
+2. **Página de Detalhes do Closer** - Botão para adicionar dados diretamente para aquele closer
+
+## Interface do Usuário
+
+### Dialog de Inserção Manual (SquadMetricsDialog)
+
+```text
+┌─────────────────────────────────────────────────┐
+│  Adicionar Métrica Manual                       │
+├─────────────────────────────────────────────────┤
+│                                                 │
+│  Tipo de Período:                               │
+│  ┌──────┐ ┌─────────┐ ┌───────┐                │
+│  │ Dia  │ │ Semana  │ │  Mês  │                │
+│  └──────┘ └─────────┘ └───────┘                │
+│                                                 │
+│  Closer:         [▼ Selecione um closer ]       │
+│                                                 │
+│  Data/Período:   [📅 Selecione a data   ]       │
+│                  (exibe intervalo automático)   │
+│                                                 │
+│  ───────────────────────────────────────────    │
+│  Calls:          [ 0 ]    Vendas:    [ 0 ]      │
+│  Faturamento:    [ 0,00 ] Entradas:  [ 0,00 ]   │
+│  ───────────────────────────────────────────    │
+│  Tend. Fat.:     [ 0,00 ] Tend. Ent: [ 0,00 ]   │
+│  Cancelamentos:  [ 0 ]    Vlr Cancel:[ 0,00 ]   │
+│  Ent. Cancel.:   [ 0,00 ]                       │
+│                                                 │
+│             [ Cancelar ]  [ Adicionar ]         │
+└─────────────────────────────────────────────────┘
 ```
 
-- Atualizar o default da tabela:
-```sql
-alter table public.squad_sheets_config
-alter column row_mapping
-set default '{"column":"H","firstBlockStartRow":5,"blockOffset":12,"numberOfBlocks":4,"dateRow":1,"metrics":{"calls":0,"sales":1,"revenue":3,"entries":4,"revenueTrend":5,"entriesTrend":6,"cancellations":7,"cancellationValue":9,"cancellationEntries":10}}'::jsonb;
+### Comportamento por Tipo de Período
+
+| Período | Comportamento |
+|---------|--------------|
+| **Dia** | Seleciona uma data única. `period_start` = `period_end` = data selecionada |
+| **Semana** | Seleciona uma semana (segunda a domingo). Calendário mostra seleção de semana |
+| **Mês** | Seleciona um mês. Calendário mostra seleção de mês inteiro |
+
+## Componentes a Criar
+
+### 1. `SquadMetricsDialog.tsx` (Novo)
+Dialog específico para adicionar métricas no contexto do squad, com:
+- Seletor de tipo de período (Tabs)
+- Seletor de closer filtrado pelo squad atual
+- Formulário com todos os campos de métricas
+
+### 2. `PeriodTypeSelector.tsx` (Novo)
+Componente reutilizável com tabs para selecionar Dia/Semana/Mês
+
+### 3. `SquadMetricsForm.tsx` (Novo)
+Formulário estendido do MetricsForm existente, incluindo:
+- Campos de tendência (revenue_trend, entries_trend)
+- Campos de cancelamento (cancellations, cancellation_value, cancellation_entries)
+- Lógica inteligente de cálculo de período baseado no tipo selecionado
+
+## Modificações em Arquivos Existentes
+
+### `SquadPage.tsx`
+- Adicionar estado para controlar abertura do dialog
+- Adicionar botão "Adicionar Métrica" no header
+- Importar e renderizar `SquadMetricsDialog`
+
+### `CloserDetailPage.tsx`
+- Adicionar botão para inserção manual (opcional, para o closer específico)
+
+### `useMetrics.ts`
+- Atualizar `useCreateMetric` para aceitar todos os campos (trends, cancellations)
+
+## Estrutura dos Arquivos
+
+```text
+src/components/dashboard/
+├── SquadMetricsDialog.tsx      ← Novo
+├── SquadMetricsForm.tsx        ← Novo
+├── PeriodTypeSelector.tsx      ← Novo
+├── SquadPage.tsx               ← Modificar
+└── closer/
+    └── CloserDetailPage.tsx    ← Modificar
 ```
 
-Resultado esperado:
-- Próxima sincronização do Alcateia vai ler os blocos nas linhas corretas e gravar calls/sales coerentes.
-- As linhas erradas atuais serão sobrescritas (upsert) para os mesmos `period_start/period_end`.
+## Fluxo de Dados
 
-### 2) Corrigir o “defaultRowMapping” do frontend (pra não voltar a salvar errado)
-Hoje o frontend ainda salva `blockOffset: 13` quando você conecta uma planilha.
-Vamos alterar em:
-- `src/hooks/useSquadSheetsConfig.ts`
-  - trocar `blockOffset: 13` → `blockOffset: 12` no `defaultRowMapping`.
+```text
+1. Usuário clica em "Adicionar Métrica"
+2. Dialog abre com squad pré-selecionado
+3. Usuário seleciona tipo de período (Dia/Semana/Mês)
+4. Usuário seleciona closer do squad
+5. Usuário seleciona data (calendário adapta ao tipo)
+6. Sistema calcula automaticamente period_start e period_end
+7. Usuário preenche métricas
+8. Submit → useCreateMetric → Supabase
+9. React Query invalida cache → UI atualiza
+```
 
-Isso garante que:
-- se você desconectar e conectar de novo, não volta o erro.
-- novos squads configurados via UI já ficam no padrão correto.
+## Detalhes Técnicos
 
-### 3) (Opcional, mas recomendado) Mostrar o blockOffset em modo “Avançado”
-Se vocês tiverem squads com planilhas diferentes no futuro, o ideal é permitir ajustar isso sem mexer em código.
-Podemos adicionar depois um “Configuração avançada” no `SquadSheetsConfig` para editar:
-- `blockOffset`
-- `firstBlockStartRow`
-- (talvez) `column`
+### Schema do Formulário (Zod)
 
-Não é obrigatório para corrigir Alcateia agora.
+```typescript
+const squadMetricsSchema = z.object({
+  period_type: z.enum(['day', 'week', 'month']),
+  closer_id: z.string().min(1),
+  selected_date: z.date(),
+  calls: z.coerce.number().int().min(0),
+  sales: z.coerce.number().int().min(0),
+  revenue: z.coerce.number().min(0),
+  entries: z.coerce.number().min(0),
+  revenue_trend: z.coerce.number().min(0).optional(),
+  entries_trend: z.coerce.number().min(0).optional(),
+  cancellations: z.coerce.number().int().min(0).optional(),
+  cancellation_value: z.coerce.number().min(0).optional(),
+  cancellation_entries: z.coerce.number().min(0).optional(),
+});
+```
 
-## Como vamos validar que ficou certo
-Após aplicar as correções acima:
-1. Abrir a página do Squad **Alcateia** e clicar em **Sincronizar**.
-2. Conferir logs da função:
-   - Deve aparecer `Raw config` com `blockOffset: 12` (ou pelo menos `Config` usando `12`).
-3. Conferir dados no backend (amostragem):
-   - Para o período onde estava absurdo (ex.: 2026-01-15 → 2026-01-19), `sales` deve cair para algo “contagem” (não dezenas de milhares).
-4. No app, a “Taxa de Conversão” deve voltar para valores plausíveis e próximos do que vocês enxergam na planilha.
+### Cálculo de Período
 
-## Arquivos/itens que serão alterados
-- Banco (migração nova):
-  - Atualizar `row_mapping.blockOffset` de Alcateia e Sharks para 12
-  - Alterar default de `row_mapping` para 12
-- Frontend:
-  - `src/hooks/useSquadSheetsConfig.ts` (defaultRowMapping)
+```typescript
+import { 
+  startOfDay, endOfDay, 
+  startOfWeek, endOfWeek, 
+  startOfMonth, endOfMonth 
+} from 'date-fns';
 
-## Observação importante (para expectativas)
-A conversão no app é calculada como:
-- `conversion = (sales / calls) * 100`
-Ela pode não bater “exatamente” com a célula de % da planilha se a planilha usa arredondamento ou uma fórmula diferente; mas deve ficar coerente (não 300%+, não 1000%+).
+function calculatePeriod(date: Date, type: 'day' | 'week' | 'month') {
+  switch (type) {
+    case 'day':
+      return {
+        start: startOfDay(date),
+        end: endOfDay(date)
+      };
+    case 'week':
+      return {
+        start: startOfWeek(date, { weekStartsOn: 1 }),
+        end: endOfWeek(date, { weekStartsOn: 1 })
+      };
+    case 'month':
+      return {
+        start: startOfMonth(date),
+        end: endOfMonth(date)
+      };
+  }
+}
+```
+
+### Payload para Supabase
+
+```typescript
+const payload = {
+  closer_id: values.closer_id,
+  period_start: format(period.start, 'yyyy-MM-dd'),
+  period_end: format(period.end, 'yyyy-MM-dd'),
+  calls: values.calls,
+  sales: values.sales,
+  revenue: values.revenue,
+  entries: values.entries,
+  revenue_trend: values.revenue_trend ?? 0,
+  entries_trend: values.entries_trend ?? 0,
+  cancellations: values.cancellations ?? 0,
+  cancellation_value: values.cancellation_value ?? 0,
+  cancellation_entries: values.cancellation_entries ?? 0,
+  source: 'manual',
+};
+```
+
+## Arquivos a Criar/Modificar
+
+| Arquivo | Ação | Descrição |
+|---------|------|-----------|
+| `src/components/dashboard/PeriodTypeSelector.tsx` | Criar | Componente de seleção Dia/Semana/Mês |
+| `src/components/dashboard/SquadMetricsForm.tsx` | Criar | Formulário completo com todos os campos |
+| `src/components/dashboard/SquadMetricsDialog.tsx` | Criar | Dialog de inserção manual |
+| `src/components/dashboard/SquadPage.tsx` | Modificar | Adicionar botão e integrar dialog |
+| `src/components/dashboard/closer/CloserDetailPage.tsx` | Modificar | Adicionar botão de inserção (opcional) |
+| `src/hooks/useMetrics.ts` | Modificar | Expandir payload do createMetric |
+
+## Resultado Esperado
+
+1. Botão "Adicionar Métrica" visível na página do squad ao lado de "Sincronizar"
+2. Dialog intuitivo com seleção de período (Dia/Semana/Mês)
+3. Calendário adaptativo ao tipo de período selecionado
+4. Todos os campos de métricas disponíveis (incluindo trends e cancelamentos)
+5. Dados salvos com `source: 'manual'` para diferenciação
+6. UI atualiza automaticamente após inserção (realtime)
 
