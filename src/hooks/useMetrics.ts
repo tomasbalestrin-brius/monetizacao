@@ -206,21 +206,25 @@ export function useSquadMetrics(periodStart?: string, periodEnd?: string) {
       // Aplicar desconto de cancelamentos - valores líquidos
       const netRevenue = closerTotals.revenue - closerTotals.cancellationValue;
       const netEntries = closerTotals.entries - closerTotals.cancellationEntries;
+      const netSales = closerTotals.sales - closerTotals.cancellations;
       
       // Calcula tendência dinamicamente para cada closer (baseado nos valores líquidos)
       const revenueTrend = calculateTrend(netRevenue, referenceDate);
       const entriesTrend = calculateTrend(netEntries, referenceDate);
+      
+      // Taxa de cancelamento baseada nas vendas BRUTAS (para não distorcer)
       const cancellationRate = closerTotals.sales > 0 ? (closerTotals.cancellations / closerTotals.sales) * 100 : 0;
       
       return {
         closer,
         metrics: {
           ...closerTotals,
+          sales: netSales,           // Vendas líquidas
           revenue: netRevenue,       // Valor líquido
           entries: netEntries,       // Valor líquido
           revenueTrend,
           entriesTrend,
-          conversion: closerTotals.calls > 0 ? (closerTotals.sales / closerTotals.calls) * 100 : 0,
+          conversion: closerTotals.calls > 0 ? (netSales / closerTotals.calls) * 100 : 0,
           cancellationRate,
         },
       };
@@ -242,7 +246,9 @@ export function useSquadMetrics(periodStart?: string, periodEnd?: string) {
     // Calcula tendência dinamicamente para o squad
     const squadRevenueTrend = calculateTrend(totals.revenue, referenceDate);
     const squadEntriesTrend = calculateTrend(totals.entries, referenceDate);
-    const squadCancellationRate = totals.sales > 0 ? (totals.cancellations / totals.sales) * 100 : 0;
+    // Taxa de cancelamento baseada nas vendas brutas (soma cancellations / soma (sales + cancellations))
+    const grossSales = totals.sales + totals.cancellations;
+    const squadCancellationRate = grossSales > 0 ? (totals.cancellations / grossSales) * 100 : 0;
 
     return {
       squad,

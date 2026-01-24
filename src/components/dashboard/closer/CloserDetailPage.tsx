@@ -54,7 +54,7 @@ function calculateAggregatedMetrics(metrics: CloserMetricRecord[]) {
   }
 
   const totalCalls = metrics.reduce((sum, m) => sum + (m.calls || 0), 0);
-  const totalSales = metrics.reduce((sum, m) => sum + (m.sales || 0), 0);
+  const grossSales = metrics.reduce((sum, m) => sum + (m.sales || 0), 0);
   const grossRevenue = metrics.reduce((sum, m) => sum + (m.revenue || 0), 0);
   const grossEntries = metrics.reduce((sum, m) => sum + (m.entries || 0), 0);
   const totalCancellations = metrics.reduce((sum, m) => sum + (m.cancellations || 0), 0);
@@ -62,6 +62,7 @@ function calculateAggregatedMetrics(metrics: CloserMetricRecord[]) {
   const totalCancellationEntries = metrics.reduce((sum, m) => sum + (m.cancellation_entries || 0), 0);
 
   // Valores líquidos (descontando cancelamentos)
+  const totalSales = grossSales - totalCancellations;
   const totalRevenue = grossRevenue - totalCancellationValue;
   const totalEntries = grossEntries - totalCancellationEntries;
 
@@ -69,8 +70,10 @@ function calculateAggregatedMetrics(metrics: CloserMetricRecord[]) {
   const revenueTrend = metrics.reduce((sum, m) => sum + (m.revenue_trend || 0), 0);
   const entriesTrend = metrics.reduce((sum, m) => sum + (m.entries_trend || 0), 0);
 
+  // Conversão baseada em vendas líquidas
   const conversionRate = totalCalls > 0 ? (totalSales / totalCalls) * 100 : 0;
-  const cancellationRate = totalSales > 0 ? (totalCancellations / totalSales) * 100 : 0;
+  // Taxa de cancelamento baseada em vendas brutas
+  const cancellationRate = grossSales > 0 ? (totalCancellations / grossSales) * 100 : 0;
 
   return {
     totalCalls,
