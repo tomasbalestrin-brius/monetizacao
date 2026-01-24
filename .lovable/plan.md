@@ -1,142 +1,122 @@
 
-# Plano: Corrigir Mapeamento dos Valores de Cancelamento
 
-## Diagnóstico
+# Plano: Subtrair Cancelamentos do Número de Vendas
 
-Analisando os logs da sincronização, identificamos o problema no mapeamento dos offsets de cancelamento. A estrutura real da planilha é diferente da configuração atual:
+## Objetivo
 
-### Estrutura Real da Planilha (Exemplo Tainara - Semana 1)
-| Row | Offset | Valor na Planilha | Campo Real |
-|-----|--------|-------------------|------------|
-| 5   | 0      | 15                | Calls |
-| 6   | 1      | 1                 | Sales |
-| 7   | 2      | 13,00%            | % Conversão |
-| 8   | 3      | R$ 14.388,00      | Revenue |
-| 9   | 4      | R$ 8.036,00       | Entries |
-| 10  | 5      | (vazio)           | Revenue Trend |
-| 11  | 6      | (vazio)           | Entries Trend |
-| 12  | 7      | R$ 1,00           | Cancellations (count) |
-| 13  | 8      | R$ 12.000,00      | **Valor Venda Cancelado** |
-| 14  | 9      | R$ 3.200,00       | **Valor Entrada Cancelado** |
+Aplicar a mesma lógica de cálculo líquido ao número de vendas:
 
-### Configuração Atual (Incorreta)
-```json
-{
-  "cancellations": 7,      // OK
-  "cancellationValue": 9,  // ERRADO - Está lendo Valor Entrada como Valor Venda
-  "cancellationEntries": 10 // ERRADO - Offset inexistente, retorna 0
-}
+```text
+Vendas Líquidas = Vendas Brutas - Número de Cancelamentos
 ```
 
-### Configuração Correta
-```json
-{
-  "cancellations": 7,      // OK - Contagem de cancelamentos
-  "cancellationValue": 8,  // Valor de VENDA cancelado (Row 13)
-  "cancellationEntries": 9 // Valor de ENTRADA cancelado (Row 14)
-}
-```
+**Exemplo:**
+- Vendas Brutas: 10
+- Cancelamentos: 2
+- **Vendas Líquidas: 8** (exibido nos cards)
 
-## Solução
+## Locais de Modificação
 
-Atualizar os DEFAULT_CONFIG em ambas as edge functions para usar os offsets corretos.
+| Local | Função | O que muda |
+|-------|--------|------------|
+| `useMetrics.ts` | `useSquadMetrics` (linha ~192-227) | Subtrair cancelamentos das vendas por closer |
+| `useMetrics.ts` | Squad totals (linha ~229-257) | Já será líquido pois soma os closers |
+| `useMetrics.ts` | `useTotalMetrics` (linha ~269-277) | Já será líquido pois soma os squads |
+| `CloserDetailPage.tsx` | `calculateAggregatedMetrics` (linha ~56-87) | Subtrair cancelamentos das vendas |
 
-## Alterações
+## Alterações no Código
 
-### 1. `supabase/functions/sync-google-sheets/index.ts`
+### 1. `src/hooks/useMetrics.ts` - Cálculo por Closer
 
-Linha ~45-62: Atualizar o DEFAULT_CONFIG:
+Linha ~206-227: Adicionar cálculo de vendas líquidas
 
 ```typescript
-const DEFAULT_CONFIG: WeekBlockConfig = {
-  firstBlockStartRow: 5,
-  blockOffset: 13,
-  numberOfBlocks: 4,
-  dateRow: 1,
-  column: 'G',
+// Aplicar desconto de cancelamentos - valores líquidos
+const netRevenue = closerTotals.revenue - closerTotals.cancellationValue;
+const netEntries = closerTotals.entries - closerTotals.cancellationEntries;
+const netSales = closerTotals.sales - closerTotals.cancellations; // NOVO
+
+// Calcula tendência dinamicamente para cada closer
+const revenueTrend = calculateTrend(netRevenue, referenceDate);
+const entriesTrend = calculateTrend(netEntries, referenceDate);
+
+// Taxa de cancelamento baseada nas vendas BRUTAS (para não distorcer)
+const cancellationRate = closerTotals.sales > 0 
+  ? (closerTotals.cancellations / closerTotals.sales) * 100 
+  : 0;
+
+return {
+  closer,
   metrics: {
-    calls: 0,
-    sales: 1,
-    revenue: 3,
-    entries: 4,
-    revenueTrend: 5,
-    entriesTrend: 6,
-    cancellations: 7,
-    cancellationValue: 8,     // Corrigido: era 9
-    cancellationEntries: 9    // Corrigido: era 10
-  }
+    ...closerTotals,
+    sales: netSales,             // NOVO: Vendas líquidas
+    revenue: netRevenue,
+    entries: netEntries,
+    revenueTrend,
+    entriesTrend,
+    conversion: closerTotals.calls > 0 
+      ? (netSales / closerTotals.calls) * 100  // NOVO: Usar vendas líquidas
+      : 0,
+    cancellationRate,
+  },
 };
 ```
 
-### 2. `supabase/functions/sync-squad-sheets/index.ts`
+### 2. `src/components/dashboard/closer/CloserDetailPage.tsx`
 
-Linha ~48-65: Atualizar o DEFAULT_CONFIG:
+Linha ~56-87: Adicionar cálculo de vendas líquidas
 
 ```typescript
-const DEFAULT_CONFIG: WeekBlockConfig = {
-  firstBlockStartRow: 5,
-  blockOffset: 12,
-  numberOfBlocks: 4,
-  dateRow: 1,
-  column: 'H',
-  metrics: {
-    calls: 0,
-    sales: 1,
-    revenue: 3,
-    entries: 4,
-    revenueTrend: 5,
-    entriesTrend: 6,
-    cancellations: 7,
-    cancellationValue: 8,     // Corrigido: era 9
-    cancellationEntries: 9    // Corrigido: era 10
-  }
-};
+const totalCalls = metrics.reduce((sum, m) => sum + (m.calls || 0), 0);
+const grossSales = metrics.reduce((sum, m) => sum + (m.sales || 0), 0);  // Renomear
+const grossRevenue = metrics.reduce((sum, m) => sum + (m.revenue || 0), 0);
+const grossEntries = metrics.reduce((sum, m) => sum + (m.entries || 0), 0);
+const totalCancellations = metrics.reduce((sum, m) => sum + (m.cancellations || 0), 0);
+const totalCancellationValue = metrics.reduce((sum, m) => sum + (m.cancellation_value || 0), 0);
+const totalCancellationEntries = metrics.reduce((sum, m) => sum + (m.cancellation_entries || 0), 0);
+
+// Valores líquidos (descontando cancelamentos)
+const totalSales = grossSales - totalCancellations;    // NOVO
+const totalRevenue = grossRevenue - totalCancellationValue;
+const totalEntries = grossEntries - totalCancellationEntries;
+
+// Conversão baseada em vendas líquidas
+const conversionRate = totalCalls > 0 ? (totalSales / totalCalls) * 100 : 0;
+
+// Taxa de cancelamento baseada em vendas brutas
+const cancellationRate = grossSales > 0 ? (totalCancellations / grossSales) * 100 : 0;
 ```
 
-### 3. Atualizar configurações existentes no banco de dados
+## Impacto na Taxa de Conversão
 
-Após o deploy das edge functions, atualizar as configurações já salvas:
+Com vendas líquidas, a taxa de conversão também será ajustada:
 
-```sql
--- Atualizar google_sheets_config
-UPDATE google_sheets_config 
-SET row_mapping = jsonb_set(
-  jsonb_set(row_mapping, '{metrics,cancellationValue}', '8'),
-  '{metrics,cancellationEntries}', '9'
-);
+- **Antes**: Conversão = Vendas Brutas / Ligações
+- **Depois**: Conversão = Vendas Líquidas / Ligações
 
--- Atualizar squad_sheets_config
-UPDATE squad_sheets_config 
-SET row_mapping = jsonb_set(
-  jsonb_set(row_mapping, '{metrics,cancellationValue}', '8'),
-  '{metrics,cancellationEntries}', '9'
-);
+Isso reflete melhor a conversão efetiva (vendas que permaneceram).
+
+## Taxa de Cancelamento
+
+A taxa de cancelamento continuará sendo calculada sobre as vendas **brutas** para não distorcer a métrica:
+
+```text
+% Cancelamento = Cancelamentos / Vendas Brutas × 100
 ```
 
 ## Arquivos a Modificar
 
-| Arquivo | Ação |
-|---------|------|
-| `supabase/functions/sync-google-sheets/index.ts` | Corrigir offsets no DEFAULT_CONFIG |
-| `supabase/functions/sync-squad-sheets/index.ts` | Corrigir offsets no DEFAULT_CONFIG |
+| Arquivo | Linhas | Descrição |
+|---------|--------|-----------|
+| `src/hooks/useMetrics.ts` | ~206-227 | Aplicar netSales no cálculo por closer |
+| `src/components/dashboard/closer/CloserDetailPage.tsx` | ~56-73 | Aplicar netSales na função calculateAggregatedMetrics |
 
 ## Resultado Esperado
 
-Após as correções e nova sincronização:
-1. **Valor Venda Cancelado** (offset 8): Lerá corretamente `R$ 12.000,00`
-2. **Valor Entrada Cancelado** (offset 9): Lerá corretamente `R$ 3.200,00`
+Após a implementação:
 
-## Validação
+1. **Cards de Vendas** - Mostrarão vendas líquidas (após descontar cancelamentos)
+2. **Taxa de Conversão** - Baseada em vendas líquidas
+3. **Taxa de Cancelamento** - Continua baseada em vendas brutas (para não distorcer)
+4. **Cards de Cancelamento** - Continuarão exibindo os valores separadamente (em vermelho)
 
-Após deploy, sincronizar novamente e verificar:
-```sql
-SELECT c.name, m.cancellation_value, m.cancellation_entries
-FROM metrics m
-JOIN closers c ON c.id = m.closer_id
-WHERE m.period_start >= '2026-01-01'
-ORDER BY c.name, m.period_start;
-```
-
-Os valores devem corresponder à planilha:
-- `cancellation_value` = Valor na coluna "Valor Venda Cancelado"
-- `cancellation_entries` = Valor na coluna "Valor Entrada Cancelado"
