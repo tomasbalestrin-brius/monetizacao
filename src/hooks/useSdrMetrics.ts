@@ -1,5 +1,6 @@
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
 
 export interface SDR {
   id: string;
@@ -266,6 +267,142 @@ export function useSDRsWithMetrics(
       });
 
       return result;
+    },
+  });
+}
+
+// Create SDR metric
+export function useCreateSDRMetric() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (metric: {
+      sdr_id: string;
+      date: string;
+      funnel: string | null;
+      activated: number;
+      scheduled: number;
+      scheduled_same_day: number;
+      attended: number;
+      sales: number;
+      source: string;
+    }) => {
+      // Calculate rates
+      const scheduled_rate = metric.activated > 0 
+        ? (metric.scheduled / metric.activated) * 100 
+        : 0;
+      const attendance_rate = metric.scheduled_same_day > 0 
+        ? (metric.attended / metric.scheduled_same_day) * 100 
+        : 0;
+      const conversion_rate = metric.attended > 0 
+        ? (metric.sales / metric.attended) * 100 
+        : 0;
+
+      const { data, error } = await supabase
+        .from('sdr_metrics')
+        .insert({
+          ...metric,
+          scheduled_rate,
+          attendance_rate,
+          conversion_rate,
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['sdr-metrics'] });
+      queryClient.invalidateQueries({ queryKey: ['sdr-total-metrics'] });
+      queryClient.invalidateQueries({ queryKey: ['sdrs-with-metrics'] });
+    },
+    onError: (error) => {
+      console.error('Error creating SDR metric:', error);
+      toast.error('Erro ao criar métrica');
+    },
+  });
+}
+
+// Update SDR metric
+export function useUpdateSDRMetric() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ id, ...updates }: {
+      id: string;
+      date?: string;
+      funnel?: string | null;
+      activated?: number;
+      scheduled?: number;
+      scheduled_same_day?: number;
+      attended?: number;
+      sales?: number;
+    }) => {
+      // Calculate rates if metrics are being updated
+      const calculatedRates: Record<string, number> = {};
+      
+      if (updates.activated !== undefined && updates.scheduled !== undefined) {
+        calculatedRates.scheduled_rate = updates.activated > 0 
+          ? (updates.scheduled / updates.activated) * 100 
+          : 0;
+      }
+      if (updates.scheduled_same_day !== undefined && updates.attended !== undefined) {
+        calculatedRates.attendance_rate = updates.scheduled_same_day > 0 
+          ? (updates.attended / updates.scheduled_same_day) * 100 
+          : 0;
+      }
+      if (updates.attended !== undefined && updates.sales !== undefined) {
+        calculatedRates.conversion_rate = updates.attended > 0 
+          ? (updates.sales / updates.attended) * 100 
+          : 0;
+      }
+
+      const { data, error } = await supabase
+        .from('sdr_metrics')
+        .update({ ...updates, ...calculatedRates })
+        .eq('id', id)
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['sdr-metrics'] });
+      queryClient.invalidateQueries({ queryKey: ['sdr-total-metrics'] });
+      queryClient.invalidateQueries({ queryKey: ['sdrs-with-metrics'] });
+      toast.success('Métrica atualizada!');
+    },
+    onError: (error) => {
+      console.error('Error updating SDR metric:', error);
+      toast.error('Erro ao atualizar métrica');
+    },
+  });
+}
+
+// Delete SDR metric
+export function useDeleteSDRMetric() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase
+        .from('sdr_metrics')
+        .delete()
+        .eq('id', id);
+
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['sdr-metrics'] });
+      queryClient.invalidateQueries({ queryKey: ['sdr-total-metrics'] });
+      queryClient.invalidateQueries({ queryKey: ['sdrs-with-metrics'] });
+      toast.success('Métrica removida!');
+    },
+    onError: (error) => {
+      console.error('Error deleting SDR metric:', error);
+      toast.error('Erro ao remover métrica');
     },
   });
 }

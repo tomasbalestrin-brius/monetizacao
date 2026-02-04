@@ -187,14 +187,16 @@ export function useCreateUser() {
   const { toast } = useToast();
 
   return useMutation({
-    mutationFn: async ({ email, password, role, permissions }: {
+    mutationFn: async ({ email, password, role, permissions, linked_closer_id, linked_sdr_id }: {
       email: string;
       password: string;
       role: AppRole;
       permissions: string[];
+      linked_closer_id?: string;
+      linked_sdr_id?: string;
     }) => {
       const response = await supabase.functions.invoke('admin-create-user', {
-        body: { email, password, role, permissions }
+        body: { email, password, role, permissions, linked_closer_id, linked_sdr_id }
       });
 
       if (response.error) throw response.error;

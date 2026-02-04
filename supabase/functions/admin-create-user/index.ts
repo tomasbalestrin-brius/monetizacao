@@ -66,8 +66,8 @@ Deno.serve(async (req) => {
     }
 
     // Parse request body
-    const { email, password, role, permissions } = await req.json()
-    console.log('admin-create-user: Creating user with email', email, 'role', role)
+    const { email, password, role, permissions, linked_closer_id, linked_sdr_id } = await req.json()
+    console.log('admin-create-user: Creating user with email', email, 'role', role, 'closer:', linked_closer_id, 'sdr:', linked_sdr_id)
 
     if (!email || !password) {
       return new Response(
@@ -126,6 +126,39 @@ Deno.serve(async (req) => {
         console.error('admin-create-user: Error assigning permissions', permError)
       } else {
         console.log('admin-create-user: Permissions assigned', permissions)
+      }
+    }
+
+    // Create entity links if provided
+    if (linked_closer_id) {
+      const { error: closerLinkError } = await supabaseAdmin
+        .from('user_entity_links')
+        .insert({
+          user_id: newUser.user.id,
+          entity_type: 'closer',
+          entity_id: linked_closer_id
+        })
+
+      if (closerLinkError) {
+        console.error('admin-create-user: Error linking to closer', closerLinkError)
+      } else {
+        console.log('admin-create-user: Linked to closer', linked_closer_id)
+      }
+    }
+
+    if (linked_sdr_id) {
+      const { error: sdrLinkError } = await supabaseAdmin
+        .from('user_entity_links')
+        .insert({
+          user_id: newUser.user.id,
+          entity_type: 'sdr',
+          entity_id: linked_sdr_id
+        })
+
+      if (sdrLinkError) {
+        console.error('admin-create-user: Error linking to SDR', sdrLinkError)
+      } else {
+        console.log('admin-create-user: Linked to SDR', linked_sdr_id)
       }
     }
 

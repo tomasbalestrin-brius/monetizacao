@@ -1,24 +1,27 @@
 import React, { useState, useCallback, useMemo } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
-import { Phone, Users, UserCheck, Calendar, TrendingUp, ShoppingCart } from 'lucide-react';
+import { Phone, Users, UserCheck, Calendar, TrendingUp, ShoppingCart, Plus } from 'lucide-react';
 import { MonthSelector, getMonthPeriod } from '@/components/dashboard/MonthSelector';
 import { SDRTypeToggle, SDRType } from './SDRTypeToggle';
 import { SDRMetricCard } from './SDRMetricCard';
 import { SDRCard } from './SDRCard';
 import { SDRDetailPage } from './SDRDetailPage';
 import { SDRSheetsConfig } from './SDRSheetsConfig';
+import { SDRMetricsDialog } from './SDRMetricsDialog';
 import { useSDRTotalMetrics, useSDRsWithMetrics } from '@/hooks/useSdrMetrics';
 import { useSDRSheetsConfig } from '@/hooks/useSDRSheetsConfig';
 import { PullToRefresh } from '@/components/ui/PullToRefresh';
 import { MetricCardSkeletonGrid, SDRCardSkeletonGrid } from '@/components/dashboard/skeletons';
 import { useRealtimeSDRMetrics, useRealtimeSyncStatus } from '@/hooks/useRealtimeMetrics';
+import { Button } from '@/components/ui/button';
 
 export function SDRDashboard() {
   const queryClient = useQueryClient();
   const [searchParams, setSearchParams] = useSearchParams();
   const [sdrType, setSdrType] = useState<SDRType>('sdr');
   const [selectedMonth, setSelectedMonth] = useState(() => new Date());
+  const [isAddMetricOpen, setIsAddMetricOpen] = useState(false);
 
   // Enable realtime subscriptions for automatic updates
   useRealtimeSDRMetrics();
@@ -95,6 +98,10 @@ export function SDRDashboard() {
           </div>
 
           <div className="flex flex-wrap items-center gap-3">
+            <Button onClick={() => setIsAddMetricOpen(true)} size="sm">
+              <Plus className="mr-2 h-4 w-4" />
+              Adicionar Métrica
+            </Button>
             <SDRTypeToggle value={sdrType} onChange={setSdrType} />
             <MonthSelector
               selectedMonth={selectedMonth}
@@ -188,6 +195,13 @@ export function SDRDashboard() {
             </div>
           )}
         </div>
+
+        {/* Add Metric Dialog */}
+        <SDRMetricsDialog
+          open={isAddMetricOpen}
+          onOpenChange={setIsAddMetricOpen}
+          sdrType={sdrType}
+        />
       </div>
     </PullToRefresh>
   );

@@ -161,12 +161,12 @@ Para restringir que usuários só vejam seus próprios dados:
 
 ## Ordem de Implementação
 
-1. Migração do banco (tabela `user_entity_links`)
-2. Hook `useUserEntityLinks.ts`
-3. Componentes SDR (`SDRMetricsForm`, `SDRMetricsDialog`)
-4. Atualizar `useSdrMetrics.ts` com CRUD
-5. Integrar dialog no `SDRDashboard` e `SDRDetailPage`
-6. Atualizar `CreateUserDialog` com seletor de vínculo
-7. Modificar edge function `admin-create-user`
-8. Exibir vínculos no `AdminPanel`
+1. ✅ Migração do banco (tabela `user_entity_links`)
+2. ✅ Hook `useUserEntityLinks.ts`
+3. ✅ Componentes SDR (`SDRMetricsForm`, `SDRMetricsDialog`)
+4. ✅ Atualizar `useSdrMetrics.ts` com CRUD
+5. ✅ Integrar dialog no `SDRDashboard` e `SDRDetailPage`
+6. ✅ Atualizar `CreateUserDialog` com seletor de vínculo
+7. ✅ Modificar edge function `admin-create-user`
+8. ✅ Exibir vínculos no `AdminPanel`
 

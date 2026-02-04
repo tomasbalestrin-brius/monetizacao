@@ -1,10 +1,12 @@
 import React, { useState } from 'react';
-import { Trash2, Loader2, Plus, Settings, Database, Users } from 'lucide-react';
+import { Trash2, Loader2, Plus, Settings, Database, Users, Link2 } from 'lucide-react';
 import { useUsers, useAssignRole, useTogglePermission, useDeleteUser } from '@/hooks/useUserManagement';
+import { useAllEntityLinks, useClosersForLinking, useSDRsForLinking } from '@/hooks/useUserEntityLinks';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Badge } from '@/components/ui/badge';
 import { MetricsTable } from './MetricsTable';
 import { CreateUserDialog } from './CreateUserDialog';
 import { GoogleSheetsConfig } from './GoogleSheetsConfig';
@@ -15,10 +17,26 @@ export function AdminPanel() {
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const { user: currentUser } = useAuth();
   const { data: users, isLoading } = useUsers();
+  const { data: entityLinks } = useAllEntityLinks();
+  const { data: closers } = useClosersForLinking();
+  const { data: sdrs } = useSDRsForLinking();
   const assignRole = useAssignRole();
   const togglePermission = useTogglePermission();
   const deleteUser = useDeleteUser();
 
+  // Helper to get entity names for a user
+  const getUserLinks = (userId: string) => {
+    const userLinks = entityLinks?.filter(link => link.user_id === userId) || [];
+    return userLinks.map(link => {
+      if (link.entity_type === 'closer') {
+        const closer = closers?.find(c => c.id === link.entity_id);
+        return { type: 'Closer', name: closer?.name || 'Desconhecido' };
+      } else {
+        const sdr = sdrs?.find(s => s.id === link.entity_id);
+        return { type: sdr?.type === 'sdr' ? 'SDR' : 'Social', name: sdr?.name || 'Desconhecido' };
+      }
+    });
+  };
   return (
     <div className="space-y-6 animate-fade-in">
       <div className="flex flex-col gap-2">
@@ -113,6 +131,18 @@ export function AdminPanel() {
                               Criado em: {new Date(user.created_at).toLocaleDateString('pt-BR')}
                             </p>
                           </div>
+                          {/* Entity Links */}
+                          {getUserLinks(user.id).length > 0 && (
+                            <div className="flex items-center gap-2 mt-2">
+                              <Link2 className="h-3 w-3 text-muted-foreground" />
+                              <span className="text-xs text-muted-foreground">Vínculos:</span>
+                              {getUserLinks(user.id).map((link, idx) => (
+                                <Badge key={idx} variant="secondary" className="text-xs">
+                                  {link.type}: {link.name}
+                                </Badge>
+                              ))}
+                            </div>
+                          )}
                         </div>
                         {!isCurrentUser && (
                           <Button

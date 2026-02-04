@@ -10,6 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Checkbox } from '@/components/ui/checkbox';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { useCreateUser } from '@/hooks/useUserManagement';
+import { useClosersForLinking, useSDRsForLinking } from '@/hooks/useUserEntityLinks';
 
 const MODULES = ['dashboard', 'eagles', 'alcateia', 'sharks', 'sdrs', 'reports', 'admin'];
 
@@ -18,6 +19,8 @@ const createUserSchema = z.object({
   password: z.string().min(6, 'Mínimo 6 caracteres'),
   role: z.enum(['admin', 'manager', 'viewer']),
   permissions: z.array(z.string()),
+  linked_closer_id: z.string().optional(),
+  linked_sdr_id: z.string().optional(),
 });
 
 type CreateUserFormData = z.infer<typeof createUserSchema>;
@@ -29,6 +32,8 @@ interface CreateUserDialogProps {
 
 export function CreateUserDialog({ open, onOpenChange }: CreateUserDialogProps) {
   const createUser = useCreateUser();
+  const { data: closers } = useClosersForLinking();
+  const { data: sdrs } = useSDRsForLinking();
   
   const form = useForm<CreateUserFormData>({
     resolver: zodResolver(createUserSchema),
@@ -37,6 +42,8 @@ export function CreateUserDialog({ open, onOpenChange }: CreateUserDialogProps) 
       password: '',
       role: 'viewer',
       permissions: ['dashboard'],
+      linked_closer_id: '',
+      linked_sdr_id: '',
     },
   });
 
@@ -48,6 +55,8 @@ export function CreateUserDialog({ open, onOpenChange }: CreateUserDialogProps) 
       password: data.password,
       role: data.role,
       permissions: data.permissions,
+      linked_closer_id: data.linked_closer_id || undefined,
+      linked_sdr_id: data.linked_sdr_id || undefined,
     });
     form.reset();
     onOpenChange(false);
@@ -55,7 +64,7 @@ export function CreateUserDialog({ open, onOpenChange }: CreateUserDialogProps) 
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="sm:max-w-md max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <UserPlus className="h-5 w-5" />
@@ -177,6 +186,65 @@ export function CreateUserDialog({ open, onOpenChange }: CreateUserDialogProps) 
               )}
             />
 
+            {/* Entity Links Section */}
+            <div className="border-t pt-4">
+              <h4 className="text-sm font-medium text-muted-foreground mb-4">Vincular a Entidade (opcional)</h4>
+              <p className="text-xs text-muted-foreground mb-4">
+                Vincule este usuário a um Closer ou SDR para controle de acesso aos dados.
+              </p>
+            </div>
+
+            <FormField
+              control={form.control}
+              name="linked_closer_id"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Vincular a Closer</FormLabel>
+                  <Select onValueChange={field.onChange} value={field.value}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Nenhum (opcional)" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <SelectItem value="">Nenhum</SelectItem>
+                      {closers?.map((closer) => (
+                        <SelectItem key={closer.id} value={closer.id}>
+                          {closer.name} {closer.squads?.name ? `(${closer.squads.name})` : ''}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="linked_sdr_id"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Vincular a SDR</FormLabel>
+                  <Select onValueChange={field.onChange} value={field.value}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Nenhum (opcional)" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <SelectItem value="">Nenhum</SelectItem>
+                      {sdrs?.map((sdr) => (
+                        <SelectItem key={sdr.id} value={sdr.id}>
+                          {sdr.name} ({sdr.type === 'sdr' ? 'SDR' : 'Social Selling'})
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
             <div className="flex justify-end gap-2 pt-4">
               <Button
                 type="button"
