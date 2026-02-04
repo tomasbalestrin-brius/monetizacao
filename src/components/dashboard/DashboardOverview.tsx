@@ -1,10 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Phone, Target, TrendingUp, DollarSign } from 'lucide-react';
 import { MetricCard } from './MetricCard';
 import { SquadSection, SquadSectionLoading } from './SquadSection';
 import { EmptyState } from './EmptyState';
-import { PeriodFilter } from './PeriodFilter';
+import { MonthSelector, getMonthPeriod } from './MonthSelector';
 import { useTotalMetrics } from '@/hooks/useMetrics';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
@@ -16,8 +16,9 @@ export function DashboardOverview() {
   useRealtimeSyncStatus();
   const navigate = useNavigate();
   const { isAdmin } = useAuth();
-  const [periodStart, setPeriodStart] = useState<string | undefined>();
-  const [periodEnd, setPeriodEnd] = useState<string | undefined>();
+  const [selectedMonth, setSelectedMonth] = useState(() => new Date());
+  
+  const { periodStart, periodEnd } = useMemo(() => getMonthPeriod(selectedMonth), [selectedMonth]);
   const { totals, squadMetrics, isLoading, error } = useTotalMetrics(periodStart, periodEnd);
 
   const handleConnectSheet = () => {
@@ -53,13 +54,9 @@ export function DashboardOverview() {
           <h1 className="text-3xl font-bold text-foreground">Dashboard Geral</h1>
           <p className="text-muted-foreground">Acompanhe as métricas de todas as equipes de vendas</p>
         </div>
-        <PeriodFilter
-          periodStart={periodStart}
-          periodEnd={periodEnd}
-          onPeriodChange={(start, end) => {
-            setPeriodStart(start);
-            setPeriodEnd(end);
-          }}
+        <MonthSelector
+          selectedMonth={selectedMonth}
+          onMonthChange={setSelectedMonth}
         />
       </div>
 

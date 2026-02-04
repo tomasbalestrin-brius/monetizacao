@@ -1,9 +1,9 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useMemo } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { Phone, Target, TrendingUp, DollarSign, Users, Loader2, XCircle, Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { MetricCard } from './MetricCard';
-import { PeriodFilter } from './PeriodFilter';
+import { MonthSelector, getMonthPeriod } from './MonthSelector';
 import { useSquadMetrics } from '@/hooks/useMetrics';
 import { useRealtimeMetrics, useRealtimeSyncStatus } from '@/hooks/useRealtimeMetrics';
 import { CloserDetailPage } from './closer/CloserDetailPage';
@@ -24,8 +24,8 @@ export function SquadPage({ squadSlug }: SquadPageProps) {
   useRealtimeMetrics();
   useRealtimeSyncStatus();
   
-  const [periodStart, setPeriodStart] = useState<string | undefined>();
-  const [periodEnd, setPeriodEnd] = useState<string | undefined>();
+  const [selectedMonth, setSelectedMonth] = useState(() => new Date());
+  const { periodStart, periodEnd } = useMemo(() => getMonthPeriod(selectedMonth), [selectedMonth]);
   const [isMetricsDialogOpen, setIsMetricsDialogOpen] = useState(false);
   const { squadMetrics, isLoading, error } = useSquadMetrics(periodStart, periodEnd);
 
@@ -33,9 +33,8 @@ export function SquadPage({ squadSlug }: SquadPageProps) {
     (sm) => sm.squad.slug.toLowerCase() === squadSlug.toLowerCase()
   );
 
-  const handlePeriodChange = useCallback((start: string | undefined, end: string | undefined) => {
-    setPeriodStart(start);
-    setPeriodEnd(end);
+  const handleMonthChange = useCallback((month: Date) => {
+    setSelectedMonth(month);
   }, []);
 
   const handleCloserClick = useCallback((id: string) => {
@@ -52,9 +51,8 @@ export function SquadPage({ squadSlug }: SquadPageProps) {
       <CloserDetailPage
         closerId={closerId}
         squadSlug={squadSlug}
-        periodStart={periodStart}
-        periodEnd={periodEnd}
-        onPeriodChange={handlePeriodChange}
+        selectedMonth={selectedMonth}
+        onMonthChange={handleMonthChange}
         onBack={handleBackFromCloser}
       />
     );
@@ -96,10 +94,9 @@ export function SquadPage({ squadSlug }: SquadPageProps) {
             Adicionar Métrica
           </Button>
         </div>
-        <PeriodFilter
-          periodStart={periodStart}
-          periodEnd={periodEnd}
-          onPeriodChange={handlePeriodChange}
+        <MonthSelector
+          selectedMonth={selectedMonth}
+          onMonthChange={setSelectedMonth}
         />
       </div>
 

@@ -14,7 +14,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import { PeriodFilter } from '@/components/dashboard/PeriodFilter';
+import { MonthSelector, getMonthPeriod } from '@/components/dashboard/MonthSelector';
 import { PullToRefresh } from '@/components/ui/PullToRefresh';
 import { MetricCard } from '@/components/dashboard/MetricCard';
 import { CloserWeeklyComparisonChart } from './CloserWeeklyComparisonChart';
@@ -29,9 +29,8 @@ import { cn } from '@/lib/utils';
 interface CloserDetailPageProps {
   closerId: string;
   squadSlug: string;
-  periodStart?: string;
-  periodEnd?: string;
-  onPeriodChange: (start: string | undefined, end: string | undefined) => void;
+  selectedMonth: Date;
+  onMonthChange: (month: Date) => void;
   onBack: () => void;
 }
 
@@ -96,9 +95,8 @@ function calculateAggregatedMetrics(metrics: CloserMetricRecord[], squadSlug: st
 export function CloserDetailPage({
   closerId,
   squadSlug,
-  periodStart,
-  periodEnd,
-  onPeriodChange,
+  selectedMonth,
+  onMonthChange,
   onBack,
 }: CloserDetailPageProps) {
   const queryClient = useQueryClient();
@@ -113,6 +111,9 @@ export function CloserDetailPage({
   useRealtimeMetrics();
   useRealtimeSyncStatus();
   
+  // Calculate period from selected month
+  const { periodStart, periodEnd } = useMemo(() => getMonthPeriod(selectedMonth), [selectedMonth]);
+
   const { data: closers } = useClosers();
   const { data: metrics, isLoading: isLoadingMetrics } = useCloserMetrics(
     closerId,
@@ -256,10 +257,9 @@ export function CloserDetailPage({
               Adicionar
             </Button>
             
-            <PeriodFilter
-              periodStart={periodStart}
-              periodEnd={periodEnd}
-              onPeriodChange={onPeriodChange}
+            <MonthSelector
+              selectedMonth={selectedMonth}
+              onMonthChange={onMonthChange}
             />
           </div>
         </div>
