@@ -1,172 +1,52 @@
 
 
-# Plano: Inserção Manual de Dados e Vínculo de Usuários
+# Plano: Corrigir Dados Duplicados do Eagles em Fevereiro 2026
 
-## Contexto
+## Problema Identificado
 
-O sistema precisa permitir:
-1. Inserção manual de métricas para SDRs e Social Selling (já existe para Closers)
-2. Vincular usuários do sistema a entidades (Closer ou SDR) para controle de acesso
-3. Ex: Usuário "Deyvid" vinculado ao Closer "Deyvid" só pode ver/editar seus próprios dados
+A sincronização do Google Sheets criou **12 registros duplicados** do Eagles com datas de **Fevereiro 2026** quando os dados reais são de Janeiro 2025.
 
----
+**Situação Atual no Banco:**
+- Fevereiro 2026 (Eagles): 12 registros, R$ 838.160 → **INCORRETO - deve ser deletado**
+- Janeiro 2026 (Eagles): 12 registros, R$ 475.244 → Dados corretos de Janeiro 2025
+- Janeiro 2026 (Alcateia): 12 registros → Correto
+- Janeiro 2026 (Sharks): 4 registros → Correto
 
-## 1. Alterações no Banco de Dados
+## Solução
 
-### 1.1 Nova Tabela: `user_entity_links`
+Executar uma migração SQL para deletar os 12 registros incorretos de Fevereiro 2026 do Eagles.
 
-Vincula profiles a closers ou SDRs:
+## SQL a Executar
 
 ```sql
-CREATE TABLE user_entity_links (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  user_id UUID NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
-  entity_type TEXT NOT NULL CHECK (entity_type IN ('closer', 'sdr')),
-  entity_id UUID NOT NULL,
-  created_at TIMESTAMPTZ DEFAULT NOW(),
-  UNIQUE(user_id, entity_type, entity_id)
+DELETE FROM metrics
+WHERE id IN (
+  SELECT m.id 
+  FROM metrics m
+  JOIN closers c ON m.closer_id = c.id
+  JOIN squads s ON c.squad_id = s.id
+  WHERE s.slug = 'eagles'
+  AND m.period_start >= '2026-02-01'
+  AND m.period_start < '2026-03-01'
 );
-
--- Índices
-CREATE INDEX idx_user_entity_links_user ON user_entity_links(user_id);
-CREATE INDEX idx_user_entity_links_entity ON user_entity_links(entity_type, entity_id);
-
--- RLS
-ALTER TABLE user_entity_links ENABLE ROW LEVEL SECURITY;
-
--- Políticas
-CREATE POLICY "Admins can manage entity links"
-  ON user_entity_links FOR ALL
-  USING (has_role(auth.uid(), 'admin'));
-
-CREATE POLICY "Users can view their own links"
-  ON user_entity_links FOR SELECT
-  USING (user_id = auth.uid());
 ```
 
-### 1.2 Hooks para SDR Metrics CRUD
+## Resultado Esperado
 
-Adicionar mutations no `useSdrMetrics.ts`:
-- `useCreateSDRMetric`
-- `useUpdateSDRMetric`  
-- `useDeleteSDRMetric`
+Após a execução:
+- **Dashboard Geral (Fevereiro 2026):** Mostrará R$ 0,00 em todos os valores
+- **Squad Eagles (Fevereiro 2026):** Estará vazio, pronto para entrada manual
+- **Squad Eagles (Janeiro 2026):** Continuará com os dados históricos importados
 
----
+## Impacto
 
-## 2. Componentes de UI
+| Antes | Depois |
+|-------|--------|
+| Faturamento Eagles Fev: R$ 838.160 | Faturamento Eagles Fev: R$ 0,00 |
+| 123 calls em Fev | 0 calls em Fev |
+| 21 vendas em Fev | 0 vendas em Fev |
 
-### 2.1 SDRMetricsDialog (Novo)
+## Arquivos Afetados
 
-Formulário para inserção manual de métricas SDR/Social Selling:
-
-| Campo | Tipo | Descrição |
-|-------|------|-----------|
-| sdr_id | Select | SDR do dropdown |
-| date | DatePicker | Data da métrica |
-| funnel | Text (opcional) | Nome do funil |
-| activated | Number | Leads ativados |
-| scheduled | Number | Agendados |
-| scheduled_same_day | Number | Agendados no mesmo dia |
-| attended | Number | Realizados |
-| sales | Number | Vendas |
-
-### 2.2 SDRMetricsForm (Novo)
-
-Similar ao `SquadMetricsForm`, com campos específicos para SDR.
-
-### 2.3 Atualização do SDRDashboard
-
-Adicionar botão "Adicionar Métrica" no header igual ao SquadPage.
-
-### 2.4 Vínculo de Usuário no Admin Panel
-
-Novo campo no `CreateUserDialog` e lista de usuários:
-- Dropdown: "Vincular a Closer" (lista closers)
-- Dropdown: "Vincular a SDR" (lista SDRs)
-
----
-
-## 3. Arquivos a Criar/Modificar
-
-| Arquivo | Ação |
-|---------|------|
-| `src/components/dashboard/sdr/SDRMetricsForm.tsx` | **Criar** - Formulário para métricas SDR |
-| `src/components/dashboard/sdr/SDRMetricsDialog.tsx` | **Criar** - Dialog wrapper |
-| `src/hooks/useSdrMetrics.ts` | **Modificar** - Adicionar CRUD mutations |
-| `src/components/dashboard/sdr/SDRDashboard.tsx` | **Modificar** - Adicionar botão e dialog |
-| `src/components/dashboard/sdr/SDRDetailPage.tsx` | **Modificar** - Adicionar edição inline |
-| `src/hooks/useUserEntityLinks.ts` | **Criar** - Hook para vínculos |
-| `src/components/dashboard/CreateUserDialog.tsx` | **Modificar** - Adicionar seletor de vínculo |
-| `src/components/dashboard/AdminPanel.tsx` | **Modificar** - Exibir vínculos na lista |
-| Edge Function `admin-create-user` | **Modificar** - Criar vínculo ao criar usuário |
-
----
-
-## 4. Fluxo de Trabalho
-
-### 4.1 Criar Usuário Vinculado
-
-```text
-Admin Panel → Novo Usuário → Preenche dados + Seleciona Closer "Deyvid"
-    ↓
-Edge Function cria:
-  1. auth.users (email/senha)
-  2. profiles (trigger)
-  3. user_roles (role)
-  4. module_permissions (permissões)
-  5. user_entity_links (closer_id = Deyvid)
-```
-
-### 4.2 Inserção Manual SDR
-
-```text
-SDR Dashboard → "+ Adicionar Métrica" → Dialog abre
-    ↓
-Usuário preenche: SDR, Data, Funil, Ativados, Agendados...
-    ↓
-Submit → useCreateSDRMetric → sdr_metrics (source: 'manual')
-```
-
----
-
-## 5. Lógica de Acesso (Fase Futura)
-
-Para restringir que usuários só vejam seus próprios dados:
-
-1. Hook `useCurrentUserLinks()` retorna os entity_ids vinculados
-2. Filtrar queries de métricas por entity_id
-3. RLS policies opcionais para reforçar no banco
-
-**Nota**: Esta fase inicial foca na estrutura de vínculo. A restrição de acesso pode ser implementada posteriormente.
-
----
-
-## Diagrama de Relacionamentos
-
-```text
-┌────────────┐       ┌───────────────────┐       ┌──────────┐
-│  profiles  │──────▶│ user_entity_links │◀──────│ closers  │
-│  (user_id) │       │ entity_type='closer'     │ (id)     │
-└────────────┘       │ entity_id              │  └──────────┘
-                     └───────────────────┘
-                              │
-                              ▼
-                     ┌──────────┐
-                     │   sdrs   │
-                     │   (id)   │
-                     └──────────┘
-```
-
----
-
-## Ordem de Implementação
-
-1. ✅ Migração do banco (tabela `user_entity_links`)
-2. ✅ Hook `useUserEntityLinks.ts`
-3. ✅ Componentes SDR (`SDRMetricsForm`, `SDRMetricsDialog`)
-4. ✅ Atualizar `useSdrMetrics.ts` com CRUD
-5. ✅ Integrar dialog no `SDRDashboard` e `SDRDetailPage`
-6. ✅ Atualizar `CreateUserDialog` com seletor de vínculo
-7. ✅ Modificar edge function `admin-create-user`
-8. ✅ Exibir vínculos no `AdminPanel`
+Nenhum arquivo de código será modificado. Apenas uma migração de banco de dados para limpeza de dados.
 
