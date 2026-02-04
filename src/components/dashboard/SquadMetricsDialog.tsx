@@ -66,15 +66,31 @@ export function SquadMetricsDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[500px] max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle>{isEditing ? 'Editar Métrica' : 'Adicionar Métrica Manual'}</DialogTitle>
-          <DialogDescription>
-            {isEditing 
-              ? `Atualize os dados de desempenho para o Squad ${squad.name}.`
-              : `Insira os dados de desempenho para um closer do Squad ${squad.name}.`
-            }
-          </DialogDescription>
+      <DialogContent className="sm:max-w-[520px] max-h-[90vh] overflow-y-auto backdrop-blur-sm bg-background/95 border-border/50">
+        <DialogHeader className="pb-2">
+          <div className="flex items-center gap-3">
+            <div className="p-2 rounded-lg bg-primary/20">
+              <svg
+                className="h-5 w-5 text-primary"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+                strokeWidth={2}
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
+                />
+              </svg>
+            </div>
+            <div>
+              <DialogTitle className="text-lg">{isEditing ? 'Editar Métrica' : 'Adicionar Métrica'}</DialogTitle>
+              <DialogDescription className="text-sm">
+                Squad {squad.name}
+              </DialogDescription>
+            </div>
+          </div>
         </DialogHeader>
         
         <SquadMetricsForm
