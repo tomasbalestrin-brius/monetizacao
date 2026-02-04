@@ -1,8 +1,8 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useMemo } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
 import { Phone, Users, UserCheck, Calendar, TrendingUp, ShoppingCart } from 'lucide-react';
-import { PeriodFilter } from '@/components/dashboard/PeriodFilter';
+import { MonthSelector, getMonthPeriod } from '@/components/dashboard/MonthSelector';
 import { SDRTypeToggle, SDRType } from './SDRTypeToggle';
 import { SDRMetricCard } from './SDRMetricCard';
 import { SDRCard } from './SDRCard';
@@ -18,8 +18,7 @@ export function SDRDashboard() {
   const queryClient = useQueryClient();
   const [searchParams, setSearchParams] = useSearchParams();
   const [sdrType, setSdrType] = useState<SDRType>('sdr');
-  const [periodStart, setPeriodStart] = useState<string | undefined>();
-  const [periodEnd, setPeriodEnd] = useState<string | undefined>();
+  const [selectedMonth, setSelectedMonth] = useState(() => new Date());
 
   // Enable realtime subscriptions for automatic updates
   useRealtimeSDRMetrics();
@@ -27,6 +26,8 @@ export function SDRDashboard() {
 
   // Check if viewing a specific SDR
   const selectedSdrId = searchParams.get('sdr');
+  
+  const { periodStart, periodEnd } = useMemo(() => getMonthPeriod(selectedMonth), [selectedMonth]);
 
   const { data: totalMetrics, isLoading: isLoadingTotal } = useSDRTotalMetrics(
     sdrType,
@@ -43,10 +44,9 @@ export function SDRDashboard() {
   const { data: sheetsConfig, isLoading: isLoadingConfig } = useSDRSheetsConfig();
   const isConnected = !!sheetsConfig?.spreadsheet_id;
 
-  const handlePeriodChange = (start: string | undefined, end: string | undefined) => {
-    setPeriodStart(start);
-    setPeriodEnd(end);
-  };
+  const handleMonthChange = useCallback((month: Date) => {
+    setSelectedMonth(month);
+  }, []);
 
   const handleSDRClick = (sdrId: string) => {
     setSearchParams({ module: 'sdrs', sdr: sdrId });
@@ -67,9 +67,8 @@ export function SDRDashboard() {
     return (
       <SDRDetailPage
         sdrId={selectedSdrId}
-        periodStart={periodStart}
-        periodEnd={periodEnd}
-        onPeriodChange={handlePeriodChange}
+        selectedMonth={selectedMonth}
+        onMonthChange={handleMonthChange}
         onBack={handleBackToDashboard}
       />
     );
@@ -97,10 +96,9 @@ export function SDRDashboard() {
 
           <div className="flex flex-wrap items-center gap-3">
             <SDRTypeToggle value={sdrType} onChange={setSdrType} />
-            <PeriodFilter
-              periodStart={periodStart}
-              periodEnd={periodEnd}
-              onPeriodChange={handlePeriodChange}
+            <MonthSelector
+              selectedMonth={selectedMonth}
+              onMonthChange={setSelectedMonth}
             />
           </div>
         </div>

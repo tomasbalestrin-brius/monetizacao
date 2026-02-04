@@ -5,7 +5,7 @@ import { ArrowLeft, Phone, Users, Calendar, TrendingUp, UserCheck, ShoppingCart,
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { PeriodFilter } from '@/components/dashboard/PeriodFilter';
+import { MonthSelector, getMonthPeriod } from '@/components/dashboard/MonthSelector';
 import { PullToRefresh } from '@/components/ui/PullToRefresh';
 import { SDRMetricCard } from './SDRMetricCard';
 import { SDRWeeklyComparisonChart } from './SDRWeeklyComparisonChart';
@@ -18,9 +18,8 @@ import { cn } from '@/lib/utils';
 
 interface SDRDetailPageProps {
   sdrId: string;
-  periodStart?: string;
-  periodEnd?: string;
-  onPeriodChange: (start: string | undefined, end: string | undefined) => void;
+  selectedMonth: Date;
+  onMonthChange: (month: Date) => void;
   onBack: () => void;
 }
 
@@ -92,9 +91,8 @@ function aggregateMetricsByDate(metrics: SDRMetric[]): SDRMetric[] {
 
 export function SDRDetailPage({
   sdrId,
-  periodStart,
-  periodEnd,
-  onPeriodChange,
+  selectedMonth,
+  onMonthChange,
   onBack,
 }: SDRDetailPageProps) {
   const queryClient = useQueryClient();
@@ -104,6 +102,8 @@ export function SDRDetailPage({
   // Enable realtime subscriptions for automatic data refresh
   useRealtimeSDRMetrics();
   useRealtimeSyncStatus();
+  
+  const { periodStart, periodEnd } = useMemo(() => getMonthPeriod(selectedMonth), [selectedMonth]);
   
   const { data: sdrs } = useSDRs();
   const { data: funnels, isLoading: isLoadingFunnels } = useSDRFunnels(sdrId);
@@ -262,10 +262,9 @@ export function SDRDetailPage({
               </Select>
             )}
             
-            <PeriodFilter
-              periodStart={periodStart}
-              periodEnd={periodEnd}
-              onPeriodChange={onPeriodChange}
+            <MonthSelector
+              selectedMonth={selectedMonth}
+              onMonthChange={onMonthChange}
             />
           </div>
         </div>
