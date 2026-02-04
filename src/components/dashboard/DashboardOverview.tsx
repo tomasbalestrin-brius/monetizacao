@@ -39,13 +39,6 @@ export function DashboardOverview() {
     );
   }
 
-  // Check if there's no data
-  const hasData = totals.calls > 0 || totals.sales > 0 || totals.revenue > 0;
-
-  if (!isLoading && !hasData) {
-    return <EmptyState onConnectSheet={handleConnectSheet} />;
-  }
-
   return (
     <div className="space-y-8 animate-fade-in">
       {/* Page header */}
