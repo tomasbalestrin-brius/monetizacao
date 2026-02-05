@@ -1,158 +1,92 @@
 
-# Plano: Melhorar UX/UI da Adição de Métricas Manuais para Closers
+# Plano: Adicionar Seletor de Mês Explícito no Formulário de Métricas
 
 ## Problema Identificado
 
-O formulário atual de métricas para Closers (`SquadMetricsForm`) é:
-- **Complexo demais**: 12 campos distribuídos em 3 seções
-- **Visual desatualizado**: Sem ícones, cores ou hierarquia visual
-- **Muitos passos**: O usuário precisa entender tipo de período, datas, múltiplos valores
-- **Inconsistente**: Design diferente do formulário SDR (que já foi melhorado)
+O formulário atual requer que o usuário:
+1. Selecione o tipo de período (Dia/Semana/Mês)
+2. Abra o calendário e navegue até o mês desejado
+3. Clique em uma data qualquer daquele mês
+
+Isso é confuso, especialmente quando o usuário quer adicionar métricas de um mês diferente do atual.
 
 ## Solução Proposta
 
-Redesenhar completamente o `SquadMetricsForm` e `SquadMetricsDialog` seguindo o padrão moderno já aplicado no SDR, com:
+Adicionar um **seletor de mês rápido** quando o tipo de período for "Mês", similar ao `MonthSelector` usado no dashboard.
 
-### 1. Novo Design Visual
+### Novo Comportamento
 
-| Elemento | Antes | Depois |
-|----------|-------|--------|
-| Seletor de Closer | Select básico | Select com avatar/inicial colorida |
-| Seletor de Data | Apenas calendário | Calendário + botões "Hoje", "Ontem" |
-| Tipo de Período | Toggle Group simples | Toggle Group com ícones destacados |
-| Campos numéricos | Inputs básicos | Inputs com ícones coloridos por categoria |
-| Seções | Divisórias com texto | Cards com gradientes e ícones |
+| Tipo de Período | Seleção |
+|-----------------|---------|
+| **Dia** | Calendário com seleção de dia específico |
+| **Semana** | Calendário com seleção de semana |
+| **Mês** | Seletor de mês com setas (◀ Fevereiro 2026 ▶) |
 
-### 2. Reorganização dos Campos
+### Design Visual
 
 ```text
 ┌─────────────────────────────────────────────────────────────┐
-│  [🔵 Closer Selector com Avatar]                            │
+│  📅 Tipo de Período                                         │
+│  [Dia] [Semana] [Mês ✓]                                     │
 ├─────────────────────────────────────────────────────────────┤
-│  [📅 Tipo de Período] [Dia] [Semana] [Mês]                  │
-├─────────────────────────────────────────────────────────────┤
-│  [📆 Data]                        [Hoje] [Ontem]            │
-│   Período: 03/02/2026 a 09/02/2026                          │
-├─────────────────────────────────────────────────────────────┤
-│  ⚡ MÉTRICAS PRINCIPAIS                                     │
-│  ┌────────────┐  ┌────────────┐                             │
-│  │ 📞 Calls   │  │ 🎯 Vendas  │                             │
-│  │    [___]   │  │    [___]   │                             │
-│  └────────────┘  └────────────┘                             │
-├─────────────────────────────────────────────────────────────┤
-│  💰 FATURAMENTO                                             │
-│  ┌────────────┐  ┌────────────┐                             │
-│  │ 💵 Fatur.  │  │ 💵 Entradas│                             │
-│  │  R$ [___]  │  │  R$ [___]  │                             │
-│  ├────────────┤  ├────────────┤                             │
-│  │ 📈 Tend.   │  │ 📈 Tend.   │                             │
-│  │  R$ [___]  │  │  R$ [___]  │                             │
-│  └────────────┘  └────────────┘                             │
-├─────────────────────────────────────────────────────────────┤
-│  🔴 CANCELAMENTOS (colapsável)                              │
-│  ┌──────────┐  ┌──────────┐  ┌──────────┐                   │
-│  │ ❌ Qtd   │  │ 💸 Valor │  │ 💸 Ent.  │                   │
-│  │   [___]  │  │  R$ [__] │  │  R$ [__] │                   │
-│  └──────────┘  └──────────┘  └──────────┘                   │
+│  📆 Mês                                                     │
+│  ┌─────────────────────────────────────────────────────┐   │
+│  │  ◀   Fevereiro 2026   ▶                             │   │
+│  └─────────────────────────────────────────────────────┘   │
+│  Período: 01/02/2026 a 28/02/2026                          │
 └─────────────────────────────────────────────────────────────┘
 ```
 
-### 3. Funcionalidades de Atalho
+### Comportamento
 
-- **Botões de data rápida**: "Hoje", "Ontem", "Esta Semana"
-- **Preview do período**: Mostrar "Período: 03/02 a 09/02" em tempo real
-- **Seção de cancelamentos colapsável**: Oculta por padrão, expande ao clicar
-- **Indicadores visuais de campos obrigatórios**
+1. Quando o usuário seleciona tipo "Mês":
+   - O calendário é **substituído** pelo seletor de mês
+   - As setas permitem navegar entre meses
+   - O período é calculado automaticamente (primeiro ao último dia)
 
-### 4. Cores e Ícones por Categoria
-
-| Categoria | Cor | Ícones |
-|-----------|-----|--------|
-| Performance | Azul | Phone, Target |
-| Faturamento | Verde | DollarSign, TrendingUp |
-| Cancelamentos | Vermelho | XCircle, AlertTriangle |
+2. Quando o usuário seleciona "Dia" ou "Semana":
+   - Mantém o comportamento atual com calendário
 
 ## Arquivos a Modificar
 
 | Arquivo | Mudança |
 |---------|---------|
-| `src/components/dashboard/SquadMetricsForm.tsx` | Redesign completo com novo visual |
-| `src/components/dashboard/SquadMetricsDialog.tsx` | Backdrop blur, header melhorado |
-| `src/components/dashboard/PeriodTypeSelector.tsx` | Melhorar visual com cores |
+| `src/components/dashboard/SquadMetricsForm.tsx` | Adicionar lógica condicional para mostrar MonthSelector ou Calendar baseado no period_type |
 
 ## Seção Técnica
 
-### Componente MetricInput Reutilizável
-
-Criar helper component igual ao usado no SDR:
+### Lógica Condicional
 
 ```tsx
-function MetricInput({ icon: Icon, label, iconColor, children }) {
-  return (
-    <div className="relative">
-      <div className="flex items-center gap-2 mb-1.5">
-        <div className={cn("p-1 rounded-md", iconBgColor)}>
-          <Icon className={cn("h-3.5 w-3.5", iconColor)} />
-        </div>
-        <span className="text-xs font-medium text-muted-foreground">{label}</span>
-      </div>
-      {children}
-    </div>
-  );
-}
+{periodType === 'month' ? (
+  <MonthSelector
+    selectedMonth={field.value}
+    onMonthChange={(date) => field.onChange(date)}
+    className="w-full justify-center"
+  />
+) : (
+  <Popover>
+    {/* Calendário existente */}
+  </Popover>
+)}
 ```
 
-### Collapsible para Cancelamentos
-
-Usar `@radix-ui/react-collapsible` (já instalado) para seção opcional:
+### Importação
 
 ```tsx
-<Collapsible open={showCancellations} onOpenChange={setShowCancellations}>
-  <CollapsibleTrigger asChild>
-    <Button variant="ghost" className="w-full justify-between">
-      <span>Cancelamentos</span>
-      <ChevronDown className={cn("transition-transform", open && "rotate-180")} />
-    </Button>
-  </CollapsibleTrigger>
-  <CollapsibleContent>
-    {/* Campos de cancelamento */}
-  </CollapsibleContent>
-</Collapsible>
+import { MonthSelector } from './MonthSelector';
 ```
 
-### Quick Date Buttons
+## Benefícios
 
-```tsx
-const setQuickDate = (type: 'today' | 'yesterday' | 'thisWeek') => {
-  const today = new Date();
-  switch (type) {
-    case 'today':
-      form.setValue('selected_date', today);
-      form.setValue('period_type', 'day');
-      break;
-    case 'yesterday':
-      form.setValue('selected_date', subDays(today, 1));
-      form.setValue('period_type', 'day');
-      break;
-    case 'thisWeek':
-      form.setValue('selected_date', today);
-      form.setValue('period_type', 'week');
-      break;
-  }
-};
-```
-
-## Benefícios Esperados
-
-1. **Redução de tempo de entrada**: Atalhos de data reduzem cliques
-2. **Menos erros**: Hierarquia visual guia o usuário
-3. **Consistência**: Mesmo padrão visual do SDR
-4. **Entrada mais rápida para cancelamentos zero**: Seção colapsada por padrão
-5. **Feedback visual**: Cores indicam categorias de dados
+1. **Mais intuitivo**: Seleção de mês direta sem navegar no calendário
+2. **Menos cliques**: Um clique nas setas vs. múltiplos cliques no calendário
+3. **Consistência visual**: Usa o mesmo componente do dashboard principal
+4. **Feedback imediato**: Mostra o período calculado em tempo real
 
 ## Ordem de Implementação
 
-1. Atualizar `PeriodTypeSelector.tsx` com cores e melhor visual
-2. Redesenhar `SquadMetricsForm.tsx` com novo layout
-3. Melhorar `SquadMetricsDialog.tsx` com backdrop e header
-4. Testar fluxo completo de adição de métrica
+1. Importar `MonthSelector` no `SquadMetricsForm`
+2. Adicionar renderização condicional baseada em `periodType`
+3. Ajustar estilos para consistência
+4. Testar fluxo completo de adição de métrica mensal
