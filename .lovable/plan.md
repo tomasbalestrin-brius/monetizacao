@@ -1,155 +1,57 @@
 
-# Melhorias na Tabela de Dados SDR e Seletor de Funil
+# Correção: Data Exibida um Dia Antes na Tabela SDR
 
-## Problema Atual
+## Problema Identificado
 
-1. **Tabela de Dados Detalhados (SDRDataTable)**: Não possui botões de ação para editar ou excluir as métricas inseridas manualmente
-2. **Formulário de Métricas SDR**: O campo de funil é um input de texto livre, quando deveria mostrar automaticamente os funis vinculados ao SDR selecionado
+O problema NÃO está na gravação dos dados (as datas estão sendo salvas corretamente como `2026-02-05` no banco de dados), mas sim na **exibição** das datas na tabela.
 
-## Solução Proposta
+Na linha 115 do `SDRDataTable.tsx`:
+```typescript
+{format(new Date(metric.date), 'dd/MM/yyyy', { locale: ptBR })}
+```
 
-### 1. Adicionar Ações de Editar/Excluir na SDRDataTable
+Quando `new Date("2026-02-05")` é chamado com uma string ISO sem hora, o JavaScript interpreta como **meia-noite UTC**. Para um usuário no Brasil (UTC-3), isso resulta em:
+- `2026-02-05T00:00:00Z` (UTC) = `2026-02-04T21:00:00-03:00` (Brasil)
+- Ao formatar, aparece **04/02/2026** ao invés de **05/02/2026**
 
-Baseado no padrão já implementado em `CloserDataTable.tsx`, vou adicionar:
-- Coluna de ações com menu dropdown
-- Opção de "Editar" que abre o dialog de edição
-- Opção de "Excluir" com confirmação
-- Props opcionais `onEditMetric` e `onDeleteMetric`
+## Solucao
 
-### 2. Alterar Campo de Funil para Select com Opções do SDR
-
-Ao invés de um input de texto livre, o campo de funil será um Select que:
-- Busca os funis disponíveis para o SDR selecionado usando `useSDRFunnels`
-- Atualiza automaticamente quando o SDR selecionado muda
-- Permite adicionar um funil novo (opção "Outro...")
-- Mostra placeholder informativo enquanto nenhum SDR está selecionado
+Usar a funcao `parseDateString` que ja existe no projeto para fazer o parsing correto da data no timezone local em todos os componentes que exibem datas.
 
 ## Arquivos a Modificar
 
-1. `src/components/dashboard/sdr/SDRDataTable.tsx` - Adicionar coluna de ações
-2. `src/components/dashboard/sdr/SDRMetricsForm.tsx` - Mudar input para Select com funis do SDR
-3. `src/components/dashboard/sdr/SDRDetailPage.tsx` - Integrar handlers de editar/excluir
-4. `src/components/dashboard/sdr/SDRMetricsDialog.tsx` - Suportar modo de edição
-5. `src/components/dashboard/sdr/index.ts` - Exportar novos componentes se necessário
+1. `src/components/dashboard/sdr/SDRDataTable.tsx` - Exibicao de datas na tabela de metricas SDR
+2. Possivelmente outros componentes que exibem datas de metricas
 
-## Detalhes Técnicos
+## Alteracoes Tecnicas
 
 ### SDRDataTable.tsx
 
-```tsx
-interface SDRDataTableProps {
-  metrics: SDRMetric[];
-  showFunnelColumn?: boolean;
-  onEditMetric?: (metric: SDRMetric) => void;
-  onDeleteMetric?: (metricId: string) => void;
-}
+```diff
+- import { format } from 'date-fns';
++ import { format } from 'date-fns';
++ import { parseDateString } from '@/lib/utils';
 
-// Adicionar coluna de ações similar ao CloserDataTable
-{hasActions && (
-  <TableCell>
-    <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <Button variant="ghost" size="icon">
-          <MoreHorizontal className="h-4 w-4" />
-        </Button>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent align="end">
-        <DropdownMenuItem onClick={() => onEditMetric?.(metric)}>
-          <Edit className="mr-2 h-4 w-4" /> Editar
-        </DropdownMenuItem>
-        <DropdownMenuItem onClick={() => onDeleteMetric?.(metric.id)}>
-          <Trash2 className="mr-2 h-4 w-4" /> Excluir
-        </DropdownMenuItem>
-      </DropdownMenuContent>
-    </DropdownMenu>
-  </TableCell>
-)}
+// Linha 61 - Ordenacao de datas
+- const sortedMetrics = [...metrics].sort(
+-   (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
+- );
++ const sortedMetrics = [...metrics].sort(
++   (a, b) => parseDateString(b.date).getTime() - parseDateString(a.date).getTime()
++ );
+
+// Linha 115 - Exibicao da data
+- {format(new Date(metric.date), 'dd/MM/yyyy', { locale: ptBR })}
++ {format(parseDateString(metric.date), 'dd/MM/yyyy', { locale: ptBR })}
 ```
 
-### SDRMetricsForm.tsx
+## Verificacao de Outros Componentes
 
-```tsx
-// Observar mudança no sdr_id e buscar funis
-const selectedSdrId = form.watch('sdr_id');
-const { data: sdrFunnels, isLoading: isLoadingFunnels } = useSDRFunnels(selectedSdrId);
-
-// Mudar Input para Select
-<FormField
-  control={form.control}
-  name="funnel"
-  render={({ field }) => (
-    <FormItem>
-      <FormLabel>Funil</FormLabel>
-      <Select onValueChange={field.onChange} value={field.value || ''}>
-        <SelectTrigger>
-          <SelectValue placeholder={
-            !selectedSdrId 
-              ? "Selecione um SDR primeiro" 
-              : isLoadingFunnels 
-                ? "Carregando funis..." 
-                : "Selecione o funil"
-          } />
-        </SelectTrigger>
-        <SelectContent>
-          <SelectItem value="none">Nenhum</SelectItem>
-          {sdrFunnels?.map((funnel) => (
-            <SelectItem key={funnel} value={funnel}>{funnel}</SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
-    </FormItem>
-  )}
-/>
-```
-
-### SDRMetricsDialog.tsx
-
-Atualizar para suportar modo de edição:
-
-```tsx
-interface SDRMetricsDialogProps {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-  sdrType: 'sdr' | 'social_selling';
-  defaultSdrId?: string;
-  editingMetric?: SDRMetric; // Nova prop para edição
-}
-```
-
-### SDRDetailPage.tsx
-
-Adicionar estados e handlers para gerenciar edição/exclusão:
-
-```tsx
-const [editingMetric, setEditingMetric] = useState<SDRMetric | null>(null);
-const [deletingMetricId, setDeletingMetricId] = useState<string | null>(null);
-
-// Dialog de edição e confirmação de exclusão
-<SDRMetricsDialog
-  open={!!editingMetric}
-  editingMetric={editingMetric}
-  ...
-/>
-
-<AlertDialog open={!!deletingMetricId}>
-  ...confirmação de exclusão...
-</AlertDialog>
-```
-
-## Funis por SDR (Dados Atuais)
-
-| SDR | Tipo | Funis Disponíveis |
-|-----|------|-------------------|
-| Carlos | SDR | Implementação Carlos |
-| Dienifer | SDR | Implementação Dienifer |
-| Jaque | SDR | MPM, Teste |
-| Nathali | SDR | 50 Scripts, Orgânico Cleiton |
-| Clara | Social Selling | Mentoria Julia, SS Julia |
-| Thalita | Social Selling | SS Cleiton |
+Apos essa correcao, sera necessario verificar se outros componentes tambem usam `new Date(metric.date)` para exibir datas e aplicar a mesma correcao:
+- `CloserDataTable.tsx`
+- Graficos de comparacao semanal
+- Outras tabelas de metricas
 
 ## Resultado Esperado
 
-1. **Tabela de Dados**: Cada linha terá um menu de ações (⋮) com opções "Editar" e "Excluir"
-2. **Edição**: Abre dialog preenchido com os dados existentes para modificação
-3. **Exclusão**: Mostra confirmação antes de remover a métrica
-4. **Seletor de Funil**: Ao selecionar um SDR, o campo de funil mostra automaticamente apenas os funis vinculados a esse SDR
+A data exibida na tabela correspondera exatamente a data salva no banco de dados, independente do timezone do usuario.
