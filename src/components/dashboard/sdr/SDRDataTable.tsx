@@ -18,7 +18,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Button } from '@/components/ui/button';
 import type { SDRMetric } from '@/hooks/useSdrMetrics';
-import { cn } from '@/lib/utils';
+import { cn, parseDateString } from '@/lib/utils';
 
 interface SDRDataTableProps {
   metrics: SDRMetric[];
@@ -58,7 +58,7 @@ export function SDRDataTable({
 
   // Sort by date descending
   const sortedMetrics = [...metrics].sort(
-    (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
+    (a, b) => parseDateString(b.date).getTime() - parseDateString(a.date).getTime()
   );
 
   return (
@@ -112,7 +112,7 @@ export function SDRDataTable({
                   )}
                 >
                   <TableCell className="font-medium text-foreground">
-                    {format(new Date(metric.date), 'dd/MM/yyyy', { locale: ptBR })}
+                    {format(parseDateString(metric.date), 'dd/MM/yyyy', { locale: ptBR })}
                   </TableCell>
                   {showFunnelColumn && (
                     <TableCell className="text-muted-foreground text-sm">

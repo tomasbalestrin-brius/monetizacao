@@ -12,6 +12,7 @@ import {
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import type { SDRMetric } from '@/hooks/useSdrMetrics';
+import { parseDateString } from '@/lib/utils';
 
 interface SDRChartProps {
   metrics: SDRMetric[];
@@ -19,7 +20,7 @@ interface SDRChartProps {
 
 export function SDRChart({ metrics }: SDRChartProps) {
   const chartData = metrics.map((m) => ({
-    date: format(new Date(m.date), 'dd/MM', { locale: ptBR }),
+    date: format(parseDateString(m.date), 'dd/MM', { locale: ptBR }),
     Ativados: m.activated,
     Agendados: m.scheduled,
     Realizados: m.attended,
