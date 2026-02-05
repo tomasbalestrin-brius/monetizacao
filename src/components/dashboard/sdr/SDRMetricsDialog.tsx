@@ -9,8 +9,8 @@ import {
 } from '@/components/ui/dialog';
 import { SDRMetricsForm, type SDRMetricsFormValues } from './SDRMetricsForm';
 import { useCreateSDRMetric } from '@/hooks/useSdrMetrics';
-import { format } from 'date-fns';
 import { toast } from 'sonner';
+import { formatDateString } from '@/lib/utils';
 
 interface SDRMetricsDialogProps {
   open: boolean;
@@ -31,7 +31,7 @@ export function SDRMetricsDialog({
     try {
       await createMetric.mutateAsync({
         sdr_id: values.sdr_id,
-        date: format(values.date, 'yyyy-MM-dd'),
+        date: formatDateString(values.date),
         funnel: values.funnel || null,
         activated: values.activated,
         scheduled: values.scheduled,

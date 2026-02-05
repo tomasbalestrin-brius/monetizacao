@@ -13,7 +13,7 @@ import {
   Clock,
   Zap
 } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import { cn, parseDateString } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Calendar as CalendarComponent } from '@/components/ui/calendar';
 import {
@@ -99,7 +99,7 @@ export function SDRMetricsForm({
     resolver: zodResolver(sdrMetricsSchema),
     defaultValues: {
       sdr_id: defaultMetric?.sdr_id || defaultSdrId || '',
-      date: defaultMetric ? new Date(defaultMetric.date) : new Date(),
+      date: defaultMetric ? parseDateString(defaultMetric.date) : new Date(),
       funnel: defaultMetric?.funnel || '',
       activated: defaultMetric?.activated ?? 0,
       scheduled: defaultMetric?.scheduled ?? 0,

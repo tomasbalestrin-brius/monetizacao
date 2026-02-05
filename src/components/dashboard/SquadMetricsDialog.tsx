@@ -1,5 +1,5 @@
 import React from 'react';
-import { format } from 'date-fns';
+import { formatDateString } from '@/lib/utils';
 import {
   Dialog,
   DialogContent,
@@ -40,8 +40,8 @@ export function SquadMetricsDialog({
   ) => {
     const payload = {
       closer_id: values.closer_id,
-      period_start: format(period.start, 'yyyy-MM-dd'),
-      period_end: format(period.end, 'yyyy-MM-dd'),
+      period_start: formatDateString(period.start),
+      period_end: formatDateString(period.end),
       calls: values.calls,
       sales: values.sales,
       revenue: values.revenue,

@@ -1,5 +1,5 @@
 import React from 'react';
-import { format } from 'date-fns';
+import { formatDateString } from '@/lib/utils';
 import {
   Dialog,
   DialogContent,
@@ -26,8 +26,8 @@ export function MetricsDialog({ open, onOpenChange, metric }: MetricsDialogProps
   const handleSubmit = async (values: MetricsFormValues) => {
     const payload = {
       closer_id: values.closer_id,
-      period_start: format(values.period_start, 'yyyy-MM-dd'),
-      period_end: format(values.period_end, 'yyyy-MM-dd'),
+      period_start: formatDateString(values.period_start),
+      period_end: formatDateString(values.period_end),
       calls: values.calls,
       sales: values.sales,
       revenue: values.revenue,
