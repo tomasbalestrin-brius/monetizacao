@@ -18,7 +18,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Button } from '@/components/ui/button';
 import type { CloserMetricRecord } from '@/hooks/useMetrics';
-import { cn } from '@/lib/utils';
+import { cn, parseDateString } from '@/lib/utils';
 
 interface CloserDataTableProps {
   metrics: CloserMetricRecord[];
@@ -56,7 +56,7 @@ export function CloserDataTable({ metrics, onEditMetric, onDeleteMetric }: Close
 
   // Sort by date descending
   const sortedMetrics = [...metrics].sort(
-    (a, b) => new Date(b.period_start).getTime() - new Date(a.period_start).getTime()
+    (a, b) => parseDateString(b.period_start).getTime() - parseDateString(a.period_start).getTime()
   );
 
   return (
@@ -103,7 +103,7 @@ export function CloserDataTable({ metrics, onEditMetric, onDeleteMetric }: Close
                   )}
                 >
                   <TableCell className="font-medium text-foreground">
-                    {format(new Date(metric.period_start), 'dd/MM', { locale: ptBR })} - {format(new Date(metric.period_end), 'dd/MM', { locale: ptBR })}
+                    {format(parseDateString(metric.period_start), 'dd/MM', { locale: ptBR })} - {format(parseDateString(metric.period_end), 'dd/MM', { locale: ptBR })}
                   </TableCell>
                   <TableCell className="text-right font-medium">{metric.calls}</TableCell>
                   <TableCell className="text-right">
