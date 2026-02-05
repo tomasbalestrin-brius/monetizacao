@@ -35,6 +35,9 @@ export function CreateUserDialog({ open, onOpenChange }: CreateUserDialogProps) 
   const { data: closers } = useClosersForLinking();
   const { data: sdrs } = useSDRsForLinking();
   
+  const validClosers = closers?.filter(c => c.id && c.id.trim() !== '') || [];
+  const validSdrs = sdrs?.filter(s => s.id && s.id.trim() !== '') || [];
+  
   const form = useForm<CreateUserFormData>({
     resolver: zodResolver(createUserSchema),
     defaultValues: {
@@ -42,8 +45,8 @@ export function CreateUserDialog({ open, onOpenChange }: CreateUserDialogProps) 
       password: '',
       role: 'viewer',
       permissions: ['dashboard'],
-      linked_closer_id: '',
-      linked_sdr_id: '',
+      linked_closer_id: 'none',
+      linked_sdr_id: 'none',
     },
   });
 
@@ -55,8 +58,8 @@ export function CreateUserDialog({ open, onOpenChange }: CreateUserDialogProps) 
       password: data.password,
       role: data.role,
       permissions: data.permissions,
-      linked_closer_id: data.linked_closer_id || undefined,
-      linked_sdr_id: data.linked_sdr_id || undefined,
+      linked_closer_id: data.linked_closer_id === 'none' ? undefined : data.linked_closer_id,
+      linked_sdr_id: data.linked_sdr_id === 'none' ? undefined : data.linked_sdr_id,
     });
     form.reset();
     onOpenChange(false);
@@ -207,8 +210,8 @@ export function CreateUserDialog({ open, onOpenChange }: CreateUserDialogProps) 
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      <SelectItem value="">Nenhum</SelectItem>
-                      {closers?.map((closer) => (
+                      <SelectItem value="none">Nenhum</SelectItem>
+                      {validClosers.map((closer) => (
                         <SelectItem key={closer.id} value={closer.id}>
                           {closer.name} {closer.squads?.name ? `(${closer.squads.name})` : ''}
                         </SelectItem>
@@ -233,8 +236,8 @@ export function CreateUserDialog({ open, onOpenChange }: CreateUserDialogProps) 
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      <SelectItem value="">Nenhum</SelectItem>
-                      {sdrs?.map((sdr) => (
+                      <SelectItem value="none">Nenhum</SelectItem>
+                      {validSdrs.map((sdr) => (
                         <SelectItem key={sdr.id} value={sdr.id}>
                           {sdr.name} ({sdr.type === 'sdr' ? 'SDR' : 'Social Selling'})
                         </SelectItem>
