@@ -23,7 +23,7 @@ import { SDRDataTable } from './SDRDataTable';
 import { SDRMetricsDialog } from './SDRMetricsDialog';
 import { useSDRs, useSDRMetrics, useSDRFunnels, useDeleteSDRMetric, type SDRAggregatedMetrics, type SDRMetric } from '@/hooks/useSdrMetrics';
 import { useSwipeNavigation } from '@/hooks/useSwipeNavigation';
-import { useRealtimeSDRMetrics, useRealtimeSyncStatus } from '@/hooks/useRealtimeMetrics';
+import { useRealtimeSDRMetrics } from '@/hooks/useRealtimeMetrics';
 import { MetricCardSkeletonGrid, ChartSkeleton, TableSkeleton } from '@/components/dashboard/skeletons';
 import { cn } from '@/lib/utils';
 
@@ -119,7 +119,7 @@ export function SDRDetailPage({
   
   // Enable realtime subscriptions for automatic data refresh
   useRealtimeSDRMetrics();
-  useRealtimeSyncStatus();
+  
   
   const { periodStart, periodEnd } = useMemo(() => getMonthPeriod(selectedMonth), [selectedMonth]);
   

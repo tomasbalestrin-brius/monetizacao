@@ -22,7 +22,7 @@ import { CloserDataTable } from './CloserDataTable';
 import { SquadMetricsDialog } from '@/components/dashboard/SquadMetricsDialog';
 import { useClosers, useCloserMetrics, useDeleteMetric, type CloserMetricRecord } from '@/hooks/useMetrics';
 import { useSwipeNavigation } from '@/hooks/useSwipeNavigation';
-import { useRealtimeMetrics, useRealtimeSyncStatus } from '@/hooks/useRealtimeMetrics';
+import { useRealtimeMetrics } from '@/hooks/useRealtimeMetrics';
 import { MetricCardSkeletonGrid, ChartSkeleton, TableSkeleton } from '@/components/dashboard/skeletons';
 import { cn } from '@/lib/utils';
 
@@ -109,7 +109,7 @@ export function CloserDetailPage({
   
   // Enable realtime subscriptions for automatic data refresh
   useRealtimeMetrics();
-  useRealtimeSyncStatus();
+  
   
   // Calculate period from selected month
   const { periodStart, periodEnd } = useMemo(() => getMonthPeriod(selectedMonth), [selectedMonth]);

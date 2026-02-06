@@ -68,38 +68,3 @@ export function useRealtimeSDRMetrics() {
   }, [queryClient]);
 }
 
-/**
- * Hook to subscribe to realtime changes on sync config tables
- * Useful for showing sync status updates
- */
-export function useRealtimeSyncStatus() {
-  const queryClient = useQueryClient();
-
-  useEffect(() => {
-    const channel = supabase
-      .channel('sync-status-realtime')
-      .on(
-        'postgres_changes',
-        { event: 'UPDATE', schema: 'public', table: 'google_sheets_config' },
-        (payload) => {
-          console.log('Google Sheets config updated:', payload.new);
-          queryClient.invalidateQueries({ queryKey: ['google-sheets-config'] });
-        }
-      )
-      .on(
-        'postgres_changes',
-        { event: 'UPDATE', schema: 'public', table: 'sdr_sheets_config' },
-        (payload) => {
-          console.log('SDR Sheets config updated:', payload.new);
-          queryClient.invalidateQueries({ queryKey: ['sdr-sheets-config'] });
-        }
-      )
-      .subscribe((status) => {
-        console.log('Sync status realtime subscription status:', status);
-      });
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, [queryClient]);
-}

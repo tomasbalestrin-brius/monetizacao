@@ -5,11 +5,9 @@ import { Button } from '@/components/ui/button';
 import { MetricCard } from './MetricCard';
 import { MonthSelector, getMonthPeriod } from './MonthSelector';
 import { useSquadMetrics } from '@/hooks/useMetrics';
-import { useRealtimeMetrics, useRealtimeSyncStatus } from '@/hooks/useRealtimeMetrics';
+import { useRealtimeMetrics } from '@/hooks/useRealtimeMetrics';
 import { CloserDetailPage } from './closer/CloserDetailPage';
 import { CloserCard } from './closer/CloserCard';
-import { SquadSheetsConfig } from './SquadSheetsConfig';
-import { SquadSyncButton } from './SquadSyncButton';
 import { SquadMetricsDialog } from './SquadMetricsDialog';
 
 interface SquadPageProps {
@@ -22,7 +20,6 @@ export function SquadPage({ squadSlug }: SquadPageProps) {
   
   // Enable realtime subscriptions for automatic updates
   useRealtimeMetrics();
-  useRealtimeSyncStatus();
   
   const [selectedMonth, setSelectedMonth] = useState(() => new Date());
   const { periodStart, periodEnd } = useMemo(() => getMonthPeriod(selectedMonth), [selectedMonth]);
@@ -83,7 +80,6 @@ export function SquadPage({ squadSlug }: SquadPageProps) {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
         <div className="flex items-center gap-4">
           <h1 className="text-3xl font-bold text-foreground">Squad {squad.name}</h1>
-          <SquadSyncButton squadSlug={squadSlug} />
           <Button
             variant="outline"
             size="sm"
@@ -107,9 +103,6 @@ export function SquadPage({ squadSlug }: SquadPageProps) {
         squadSlug={squadSlug}
         selectedMonth={selectedMonth}
       />
-
-      {/* Squad-specific sheets configuration */}
-      <SquadSheetsConfig squadSlug={squadSlug} squadName={squad.name} variant="compact" />
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div className="space-y-3">

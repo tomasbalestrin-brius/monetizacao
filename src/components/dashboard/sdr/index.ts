@@ -5,6 +5,5 @@ export { SDRMetricCard } from './SDRMetricCard';
 export { SDRChart } from './SDRChart';
 export { SDRDataTable } from './SDRDataTable';
 export { SDRTypeToggle } from './SDRTypeToggle';
-export { SDRSheetsConfig } from './SDRSheetsConfig';
 export { SDRMetricsForm } from './SDRMetricsForm';
 export { SDRMetricsDialog } from './SDRMetricsDialog';

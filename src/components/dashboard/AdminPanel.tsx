@@ -9,7 +9,6 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { MetricsTable } from './MetricsTable';
 import { CreateUserDialog } from './CreateUserDialog';
-import { GoogleSheetsConfig } from './GoogleSheetsConfig';
 import { EditUserLinksDialog } from './EditUserLinksDialog';
 
 const MODULES = ['dashboard', 'eagles', 'alcateia', 'sharks', 'sdrs', 'reports', 'admin'];
@@ -46,12 +45,8 @@ export function AdminPanel() {
         <p className="text-muted-foreground">Gerencie integrações, métricas e usuários do sistema</p>
       </div>
 
-      <Tabs defaultValue="integrations" className="space-y-6">
+      <Tabs defaultValue="metrics" className="space-y-6">
         <TabsList className="bg-muted/50 p-1 h-auto flex-wrap">
-          <TabsTrigger value="integrations" className="data-[state=active]:bg-background gap-2 px-4 py-2">
-            <Settings className="h-4 w-4" />
-            Integrações
-          </TabsTrigger>
           <TabsTrigger value="metrics" className="data-[state=active]:bg-background gap-2 px-4 py-2">
             <Database className="h-4 w-4" />
             Métricas
@@ -61,20 +56,6 @@ export function AdminPanel() {
             Usuários
           </TabsTrigger>
         </TabsList>
-
-        {/* Integrations Tab */}
-        <TabsContent value="integrations" className="space-y-6">
-          <div className="grid gap-6">
-            <GoogleSheetsConfig />
-
-            {/* Placeholder for future integrations */}
-            <div className="border border-dashed border-border rounded-lg p-8 text-center">
-              <p className="text-muted-foreground text-sm">
-                Mais integrações em breve (CRM, Webhooks, etc.)
-              </p>
-            </div>
-          </div>
-        </TabsContent>
 
         {/* Metrics Tab */}
         <TabsContent value="metrics" className="space-y-6">

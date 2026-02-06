@@ -7,13 +7,11 @@ import { SDRTypeToggle, SDRType } from './SDRTypeToggle';
 import { SDRMetricCard } from './SDRMetricCard';
 import { SDRCard } from './SDRCard';
 import { SDRDetailPage } from './SDRDetailPage';
-import { SDRSheetsConfig } from './SDRSheetsConfig';
 import { SDRMetricsDialog } from './SDRMetricsDialog';
 import { useSDRTotalMetrics, useSDRsWithMetrics } from '@/hooks/useSdrMetrics';
-import { useSDRSheetsConfig } from '@/hooks/useSDRSheetsConfig';
 import { PullToRefresh } from '@/components/ui/PullToRefresh';
 import { MetricCardSkeletonGrid, SDRCardSkeletonGrid } from '@/components/dashboard/skeletons';
-import { useRealtimeSDRMetrics, useRealtimeSyncStatus } from '@/hooks/useRealtimeMetrics';
+import { useRealtimeSDRMetrics } from '@/hooks/useRealtimeMetrics';
 import { Button } from '@/components/ui/button';
 
 export function SDRDashboard() {
@@ -25,7 +23,6 @@ export function SDRDashboard() {
 
   // Enable realtime subscriptions for automatic updates
   useRealtimeSDRMetrics();
-  useRealtimeSyncStatus();
 
   // Check if viewing a specific SDR
   const selectedSdrId = searchParams.get('sdr');
@@ -44,9 +41,6 @@ export function SDRDashboard() {
     periodEnd
   );
 
-  const { data: sheetsConfig, isLoading: isLoadingConfig } = useSDRSheetsConfig();
-  const isConnected = !!sheetsConfig?.spreadsheet_id;
-
   const handleMonthChange = useCallback((month: Date) => {
     setSelectedMonth(month);
   }, []);
@@ -62,7 +56,6 @@ export function SDRDashboard() {
   const handleRefresh = useCallback(async () => {
     await queryClient.invalidateQueries({ queryKey: ['sdr-total-metrics'] });
     await queryClient.invalidateQueries({ queryKey: ['sdrs-with-metrics'] });
-    await queryClient.invalidateQueries({ queryKey: ['sdr-sheets-config'] });
   }, [queryClient]);
 
   // If a specific SDR is selected, render the detail page
@@ -77,7 +70,7 @@ export function SDRDashboard() {
     );
   }
 
-  const isLoading = isLoadingTotal || isLoadingSDRs || isLoadingConfig;
+  const isLoading = isLoadingTotal || isLoadingSDRs;
   const hasData = sdrsWithMetrics && sdrsWithMetrics.length > 0;
 
   return (
@@ -110,10 +103,8 @@ export function SDRDashboard() {
           </div>
         </div>
 
-        {/* Sheets Configuration - compact when connected, prominent when not */}
-        {!isLoading && (
-          <SDRSheetsConfig variant={isConnected && hasData ? 'compact' : 'prominent'} />
-        )}
+
+        {/* Consolidated Metrics */}
 
         {/* Consolidated Metrics */}
         {isLoading ? (
@@ -187,11 +178,9 @@ export function SDRDashboard() {
               <h3 className="text-lg font-semibold text-foreground mb-2">
                 Nenhum {sdrType === 'sdr' ? 'SDR' : 'Social Selling'} cadastrado
               </h3>
-              <p className="text-muted-foreground text-center max-w-md">
-                {isConnected 
-                  ? 'Clique em "Sincronizar" acima para importar os dados da planilha.'
-                  : 'Conecte uma planilha do Google Sheets acima para importar os dados.'}
-              </p>
+               <p className="text-muted-foreground text-center max-w-md">
+                 Adicione métricas usando o botão acima para visualizar os dados.
+               </p>
             </div>
           )}
         </div>

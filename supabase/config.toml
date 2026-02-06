@@ -2,12 +2,3 @@ project_id = "rcxqiaeubhsyfxiilysu"
 
 [functions.admin-create-user]
 verify_jwt = false
-
-[functions.sync-google-sheets]
-verify_jwt = false
-
-[functions.sync-sdr-sheets]
-verify_jwt = false
-
-[functions.sync-squad-sheets]
-verify_jwt = false
