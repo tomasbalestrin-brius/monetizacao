@@ -1,45 +1,59 @@
 
-# Bloquear edição na visão "Todos os Funis"
 
-## Objetivo
+# Remover Sincronização com Google Sheets
 
-Quando o filtro de funil estiver em "Todos os Funis", os dados exibidos sao agregados (somados) e nao representam um registro individual do banco. Portanto, a edição e exclusão devem ser bloqueadas nessa visão. Somente quando um funil individual for selecionado, os botões de editar/excluir devem aparecer.
+Como os dados de fevereiro em diante serão inseridos manualmente, toda a infraestrutura de sincronização automática será removida.
 
-## Alterações
+## O que será removido
 
-### Arquivo: `src/components/dashboard/sdr/SDRDetailPage.tsx`
+### 1. Cron Jobs (banco de dados)
+- `sync-google-sheets-cron` (job 1) - roda a cada 1 minuto
+- `sync-sdr-sheets-cron` (job 2) - roda a cada 1 minuto
 
-Passar `onEditMetric` e `onDeleteMetric` como `undefined` quando nenhum funil individual estiver selecionado e o SDR tiver múltiplos funis:
+Isso vai liberar os ~54 MB ocupados pelo pg_net ao longo do tempo.
 
-```typescript
-// Ao renderizar SDRDataTable, condicionar os handlers:
-const isAggregatedView = !selectedFunnel && hasFunnels;
+### 2. Edge Functions (3 funções)
+- `supabase/functions/sync-google-sheets/` - sync de closers
+- `supabase/functions/sync-sdr-sheets/` - sync de SDRs
+- `supabase/functions/sync-squad-sheets/` - sync por squad
 
-<SDRDataTable 
-  metrics={displayMetrics || []} 
-  showFunnelColumn={!selectedFunnel && hasFunnels}
-  onEditMetric={isAggregatedView ? undefined : handleEditMetric}
-  onDeleteMetric={isAggregatedView ? undefined : handleDeleteMetric}
-/>
+### 3. Componentes de UI de configuração de planilhas
+- `src/components/dashboard/GoogleSheetsConfig.tsx` - config global
+- `src/components/dashboard/WeekBlockConfig.tsx` - config de blocos semanais
+- `src/components/dashboard/SquadSheetsConfig.tsx` - config por squad
+- `src/components/dashboard/SquadSyncButton.tsx` - botão sync squad
+- `src/components/dashboard/sdr/SDRSheetsConfig.tsx` - config SDR
+
+### 4. Hooks de sincronização
+- `src/hooks/useGoogleSheetsConfig.ts`
+- `src/hooks/useSDRSheetsConfig.ts`
+- `src/hooks/useSquadSheetsConfig.ts`
+
+### 5. Referências nos componentes existentes
+- `AdminPanel.tsx` - remover aba/seção de integrações com GoogleSheetsConfig
+- `SDRDashboard.tsx` - remover SDRSheetsConfig e lógica de conexão
+- `SquadPage.tsx` - remover SquadSheetsConfig e SquadSyncButton
+
+### 6. Configuração
+- `supabase/config.toml` - remover entradas das 3 funções de sync
+
+## O que NÃO será removido
+- Dados históricos já sincronizados (tabelas `metrics`, `sdr_metrics`)
+- Tabelas de configuração (`google_sheets_config`, `sdr_sheets_config`, `squad_sheets_config`) - ficam no banco sem impacto
+- Edge function `admin-create-user` - continua funcionando normalmente
+- Todo o fluxo de entrada manual de dados
+
+## Detalhes Técnicos
+
+### SQL para remover cron jobs
+```sql
+SELECT cron.unschedule('sync-google-sheets-cron');
+SELECT cron.unschedule('sync-sdr-sheets-cron');
 ```
 
-Isso remove automaticamente a coluna de ações (os 3 pontinhos) na tabela quando o usuário está na visão agregada, pois o componente `SDRDataTable` já verifica `hasActions = onEditMetric || onDeleteMetric` para decidir se exibe a coluna.
-
-### Arquivo: `src/components/dashboard/sdr/SDRDetailPage.tsx` (botão Adicionar)
-
-Tambem ocultar o botão "Adicionar" na visão agregada, ja que sem funil selecionado nao faz sentido adicionar manualmente:
-
-```typescript
-{!isAggregatedView && (
-  <Button onClick={() => setShowMetricsDialog(true)} size="sm" className="gap-1.5">
-    <Plus size={16} />
-    <span className="hidden sm:inline">Adicionar</span>
-  </Button>
-)}
+### Limpeza dos logs do pg_net (libera ~54 MB)
+```sql
+DELETE FROM net._http_response;
+DELETE FROM net.http_request_queue;
 ```
 
-## Resultado
-
-- Visão "Todos os Funis": tabela mostra dados somados, sem botões de edição/exclusão/adição
-- Visão com funil individual selecionado: edição, exclusão e adição funcionam normalmente
-- SDRs com apenas 1 funil: comportamento atual mantido (edição sempre disponível)
