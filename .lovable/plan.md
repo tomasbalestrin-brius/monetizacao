@@ -1,173 +1,89 @@
 
 
-# Gerente com Acesso por Modulo
+# Filtro por Semana e Comparativo Semanal
 
 ## Objetivo
 
-Garantir que o gerente so consiga editar e gerenciar dados dos modulos aos quais tem permissao. Por exemplo, um gerente com permissao `sdrs` edita todos os dados de SDR e Social Selling, mas nao consegue editar dados de Closers.
+Adicionar um seletor de semana ao lado do seletor de mes no SDR Dashboard e SDR Detail Page, permitindo filtrar dados por semana especifica e visualizar comparativos semana a semana de forma clara.
 
-## Situacao Atual
+## O que muda
 
-Hoje o gerente tem acesso total (ALL) a todas as tabelas de metricas, independente das permissoes de modulo. As permissoes de modulo so controlam a navegacao na sidebar (frontend), mas no banco de dados o gerente pode modificar qualquer dado.
+### 1. Novo Componente: WeekSelector
 
-## O que precisa mudar
+Um seletor de semana que lista todas as semanas do mes selecionado (ex: "Sem 1 - 03/02 a 07/02", "Sem 2 - 10/02 a 14/02", etc.), com opcao "Todas" para ver o mes completo.
 
-### 1. Banco de Dados - Funcao auxiliar
+- Calcula automaticamente as semanas do mes selecionado (segunda a domingo)
+- Semanas que cruzam meses sao cortadas nos limites do mes
+- Opcao padrao: "Todas as Semanas" (comportamento atual)
 
-Criar uma funcao `manager_can_access_entity` que verifica se o gerente tem permissao de modulo para acessar uma entidade especifica:
+### 2. Filtro de Dados por Semana
 
-- Para **closers**: verificar se o gerente tem permissao do slug do squad ao qual o closer pertence (ex: `eagles`, `alcateia`, `sharks`)
-- Para **SDRs**: verificar se o gerente tem permissao `sdrs`
+Quando uma semana especifica e selecionada:
+- Os metric cards mostram apenas dados daquela semana
+- A tabela de dados mostra apenas registros daquela semana
+- O grafico comparativo continua mostrando todas as semanas para contexto visual
 
-```sql
-CREATE OR REPLACE FUNCTION public.manager_can_access_closer(
-  _user_id uuid, _closer_id uuid
-) RETURNS boolean
-LANGUAGE sql STABLE SECURITY DEFINER SET search_path = 'public'
-AS $$
-  SELECT EXISTS (
-    SELECT 1
-    FROM public.closers c
-    JOIN public.squads s ON c.squad_id = s.id
-    JOIN public.module_permissions mp ON mp.user_id = _user_id AND mp.module = s.slug
-    WHERE c.id = _closer_id
-  )
-$$;
+### 3. Comparativo Visual Semana a Semana (aprimorado)
 
-CREATE OR REPLACE FUNCTION public.manager_can_access_sdr(
-  _user_id uuid, _sdr_id uuid
-) RETURNS boolean
-LANGUAGE sql STABLE SECURITY DEFINER SET search_path = 'public'
-AS $$
-  SELECT EXISTS (
-    SELECT 1
-    FROM public.module_permissions
-    WHERE user_id = _user_id AND module = 'sdrs'
-  )
-$$;
+O grafico `SDRWeeklyComparisonChart` ja existe mas sera aprimorado:
+- Destacar visualmente a semana selecionada no grafico (barra mais opaca, as demais ficam semi-transparentes)
+- Adicionar indicadores de variacao entre a semana selecionada e a anterior
+- Quando "Todas" esta selecionado, manter o comportamento atual
+
+### 4. Onde aparece
+
+O filtro de semana sera adicionado em:
+- `SDRDashboard` (dashboard consolidado de todos os SDRs)
+- `SDRDetailPage` (pagina individual do SDR)
+
+## Layout dos filtros
+
+```text
+[Tipo SDR/SS] [Funil ▼] [◀ Fevereiro 2026 ▶] [Semana ▼]
 ```
 
-### 2. Atualizar RLS Policies
+O seletor de semana aparece logo apos o seletor de mes, mantendo a hierarquia: primeiro escolhe o mes, depois opcionalmente filtra por semana.
 
-**Tabela `metrics`** - Substituir a policy de manager:
-
-De: `has_role(auth.uid(), 'manager'::app_role)` (acesso total)
-
-Para: `has_role(auth.uid(), 'manager'::app_role) AND manager_can_access_closer(auth.uid(), closer_id)`
-
-**Tabela `sdr_metrics`** - Substituir a policy de manager:
-
-De: `has_role(auth.uid(), 'manager'::app_role)` (acesso total)
-
-Para: `has_role(auth.uid(), 'manager'::app_role) AND manager_can_access_sdr(auth.uid(), sdr_id)`
-
-**Tabela `closers`** - Adicionar policy para manager ver apenas closers dos squads permitidos
-
-**Tabela `sdrs`** - Manager com permissao `sdrs` pode gerenciar SDRs
-
-**Tabela `goals`** - Permitir que managers gerenciem metas dos modulos que tem acesso (nao apenas visualizar)
-
-### 3. Atualizar Frontend - AuthContext
-
-Adicionar `isManager` ao contexto para uso nos componentes (ja existe no AuthContext).
-
-### 4. Permitir que gerente tambem adicione metricas
-
-Os botoes de "Adicionar Metrica" e acoes de editar/excluir ja estao visiveis nas paginas de detalhe. O gerente ja consegue navegar ate essas paginas via sidebar. Nenhuma mudanca de UI necessaria.
-
-## Arquivos Alterados
+## Arquivos
 
 | Arquivo | Alteracao |
 |---------|-----------|
-| Migracao SQL | Criar funcoes auxiliares, atualizar RLS policies |
-| `src/components/dashboard/GoalsConfig.tsx` | Permitir gerentes (alem de admins) configurar metas dos seus modulos |
+| `src/components/dashboard/WeekSelector.tsx` | **Novo** - Componente de selecao de semana baseado no mes |
+| `src/components/dashboard/sdr/SDRDashboard.tsx` | Adicionar estado de semana, filtrar dados, passar para componentes |
+| `src/components/dashboard/sdr/SDRDetailPage.tsx` | Adicionar estado de semana, filtrar metricas e tabela |
+| `src/components/dashboard/sdr/SDRWeeklyComparisonChart.tsx` | Receber semana selecionada e destacar visualmente |
 
 ## Detalhes Tecnicos
 
-### SQL Completo da Migracao
+### WeekSelector - Logica de semanas do mes
 
-```sql
--- Funcao: manager pode acessar closer via squad permission
-CREATE OR REPLACE FUNCTION public.manager_can_access_closer(
-  _user_id uuid, _closer_id uuid
-) RETURNS boolean
-LANGUAGE sql STABLE SECURITY DEFINER SET search_path = 'public'
-AS $$
-  SELECT EXISTS (
-    SELECT 1
-    FROM public.closers c
-    JOIN public.squads s ON c.squad_id = s.id
-    JOIN public.module_permissions mp ON mp.user_id = _user_id AND mp.module = s.slug
-    WHERE c.id = _closer_id
-  )
-$$;
+```text
+Input: selectedMonth (Date)
+Output: array de { weekNumber, startDate, endDate, label }
 
--- Funcao: manager pode acessar sdr via module permission 'sdrs'
-CREATE OR REPLACE FUNCTION public.manager_can_access_sdr(
-  _user_id uuid, _sdr_id uuid
-) RETURNS boolean
-LANGUAGE sql STABLE SECURITY DEFINER SET search_path = 'public'
-AS $$
-  SELECT EXISTS (
-    SELECT 1
-    FROM public.module_permissions
-    WHERE user_id = _user_id AND module = 'sdrs'
-  )
-$$;
-
--- METRICS: Atualizar policy do manager
-DROP POLICY IF EXISTS "Managers can manage all metrics" ON public.metrics;
-CREATE POLICY "Managers can manage module metrics"
-  ON public.metrics FOR ALL
-  USING (
-    has_role(auth.uid(), 'manager'::app_role)
-    AND manager_can_access_closer(auth.uid(), closer_id)
-  )
-  WITH CHECK (
-    has_role(auth.uid(), 'manager'::app_role)
-    AND manager_can_access_closer(auth.uid(), closer_id)
-  );
-
--- SDR_METRICS: Atualizar policy do manager
-DROP POLICY IF EXISTS "Managers can manage all sdr_metrics" ON public.sdr_metrics;
-CREATE POLICY "Managers can manage module sdr_metrics"
-  ON public.sdr_metrics FOR ALL
-  USING (
-    has_role(auth.uid(), 'manager'::app_role)
-    AND manager_can_access_sdr(auth.uid(), sdr_id)
-  )
-  WITH CHECK (
-    has_role(auth.uid(), 'manager'::app_role)
-    AND manager_can_access_sdr(auth.uid(), sdr_id)
-  );
-
--- GOALS: Permitir managers gerenciar metas dos seus modulos
-DROP POLICY IF EXISTS "Managers can view goals" ON public.goals;
-CREATE POLICY "Managers can manage module goals"
-  ON public.goals FOR ALL
-  USING (
-    has_role(auth.uid(), 'manager'::app_role)
-    AND (
-      (entity_type = 'closer' AND manager_can_access_closer(auth.uid(), entity_id))
-      OR
-      (entity_type = 'sdr' AND manager_can_access_sdr(auth.uid(), entity_id))
-    )
-  )
-  WITH CHECK (
-    has_role(auth.uid(), 'manager'::app_role)
-    AND (
-      (entity_type = 'closer' AND manager_can_access_closer(auth.uid(), entity_id))
-      OR
-      (entity_type = 'sdr' AND manager_can_access_sdr(auth.uid(), entity_id))
-    )
-  );
+1. Pegar primeiro e ultimo dia do mes
+2. Iterar semana a semana (inicio na segunda)
+3. Cortar startDate ao maximo em startOfMonth
+4. Cortar endDate ao minimo em endOfMonth
+5. Gerar label: "Sem 1 - 03/02 a 07/02"
 ```
 
-### Impacto
+### Filtragem de metricas
 
-- Gerente de SDR: ve e edita apenas dados de SDR/Social Selling
-- Gerente de Squad Eagles: ve e edita apenas dados de closers do squad Eagles
-- Gerente com multiplos modulos: acesso a todos os modulos atribuidos
-- Admin: continua com acesso total sem restricoes
-- GoalsConfig: gerente podera definir metas para entidades dos seus modulos
+O filtro de semana sera aplicado no frontend (dados ja carregados pelo mes). Quando uma semana e selecionada:
 
+```text
+filteredMetrics = displayMetrics.filter(m => {
+  const date = parseDateString(m.date);
+  return date >= weekStart && date <= weekEnd;
+});
+```
+
+Isso afeta metric cards e tabela, mas o grafico recebe os dados completos do mes para manter o comparativo visual.
+
+### Chart com destaque
+
+O `SDRWeeklyComparisonChart` recebera uma prop `activeWeekKey` opcional. Quando definida:
+- A barra da semana ativa tera opacidade 1.0
+- As demais barras terao opacidade 0.4
+- Os indicadores de variacao comparam a semana ativa com a anterior
