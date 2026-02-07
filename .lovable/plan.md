@@ -1,137 +1,130 @@
 
 
-# Sistema de Metas Mensais para Closers e SDRs
+# Nova Role "user" - Acesso Restrito ao Proprio Canal
 
 ## Objetivo
 
-Criar um sistema onde administradores definem metas mensais para cada closer e SDR, e cada usuario vinculado pode visualizar suas proprias metas com progresso em relacao aos dados reais.
+Criar uma nova role `user` no sistema onde o usuario so ve e gerencia os dados da entidade (Closer ou SDR) vinculada a ele. Diferente do `viewer` que ve tudo em modo leitura, o `user` tera uma experiencia focada exclusivamente nos seus proprios dados.
 
-## 1. Nova tabela no banco de dados
+## O que muda
 
-Tabela `goals` com as seguintes colunas:
+### 1. Banco de Dados
 
-| Coluna | Tipo | Descricao |
-|--------|------|-----------|
-| id | uuid (PK) | Identificador unico |
-| entity_type | text | 'closer' ou 'sdr' |
-| entity_id | uuid | ID do closer ou SDR |
-| month | date | Primeiro dia do mes (ex: 2026-02-01) |
-| metric_key | text | Nome da metrica (ex: 'sales', 'revenue', 'calls', 'activated', 'scheduled') |
-| target_value | numeric | Valor da meta |
-| created_by | uuid | Admin que criou |
-| created_at | timestamptz | Data de criacao |
-| updated_at | timestamptz | Data de atualizacao |
+**Adicionar valor `user` ao enum `app_role`:**
 
-Restricao unica em `(entity_type, entity_id, month, metric_key)` para evitar duplicatas.
+```sql
+ALTER TYPE public.app_role ADD VALUE 'user';
+```
 
-### Metricas disponiveis por tipo
+**Atualizar RLS das tabelas `metrics` e `sdr_metrics`** para que o role `user` possa inserir/editar/deletar metricas das suas entidades vinculadas (usando `is_linked_to_entity`).
 
-**Closers:** calls, sales, revenue, entries, conversion_rate
+**Atualizar RLS de `closers` e `sdrs`** para que o `user` veja apenas as entidades vinculadas a ele.
 
-**SDRs:** activated, scheduled, scheduled_rate, attended, sales
+### 2. Experiencia do Usuario com Role `user`
 
-### RLS Policies
+Quando um usuario com role `user` faz login:
 
-- Admins: ALL (gerenciar tudo)
-- Managers: SELECT (visualizar)
-- Usuarios autenticados: SELECT apenas metas de entidades vinculadas a eles (via `user_entity_links`)
+- **Sem sidebar/navegacao completa**: ele vai direto para a pagina de detalhe da sua entidade vinculada
+- Se esta vinculado a um **Closer**: ve o `CloserDetailPage` diretamente
+- Se esta vinculado a um **SDR**: ve o `SDRDetailPage` diretamente
+- **Nao ve**: Dashboard geral, Squads, outros closers/SDRs, Admin, Relatorios
+- **Pode**: ver suas metricas, adicionar metricas, ver suas metas
 
-## 2. Hook de dados (`src/hooks/useGoals.ts`)
+### 3. Fluxo de Navegacao
 
-- `useGoals(entityType, entityId, month)` - buscar metas de uma entidade/mes
-- `useUpsertGoal()` - criar ou atualizar meta (admin only)
-- `useDeleteGoal()` - remover meta (admin only)
-- `useMyGoals()` - buscar metas do usuario logado usando seus entity links
+```text
+Login -> Verificar role
+  |
+  +-> admin/manager/viewer -> Dashboard normal (como hoje)
+  |
+  +-> user -> Buscar entity_links do usuario
+                |
+                +-> Vinculado a Closer -> CloserDetailPage direto
+                +-> Vinculado a SDR -> SDRDetailPage direto
+                +-> Sem vinculo -> Tela de "aguardando vinculo"
+```
 
-## 3. Componente de configuracao de metas (Admin)
-
-**Arquivo:** `src/components/dashboard/GoalsConfig.tsx`
-
-- Acessivel no Painel Admin como nova aba "Metas"
-- Selecionar tipo (Closer ou SDR), entidade, e mes
-- Formulario com campos para cada metrica relevante
-- Upsert automatico (cria ou atualiza)
-
-## 4. Exibicao de metas nas paginas individuais
-
-### CloserDetailPage
-
-- Barra de progresso abaixo de cada MetricCard mostrando % da meta atingida
-- Indicador visual: verde (>= 100%), amarelo (>= 70%), vermelho (< 70%)
-
-### SDRDetailPage
-
-- Mesma logica de barras de progresso nos SDRMetricCards
-
-### Visualizacao para o usuario vinculado
-
-- Quando um usuario com role `viewer` acessa o sistema e esta vinculado a um closer/SDR via `user_entity_links`, ele ja ve as metas no dashboard da entidade correspondente
-- Nenhuma pagina nova necessaria: as metas aparecem automaticamente nos cards existentes
-
-## 5. Componentes novos
-
-| Arquivo | Descricao |
-|---------|-----------|
-| `src/hooks/useGoals.ts` | Hook para CRUD de metas |
-| `src/components/dashboard/GoalsConfig.tsx` | Painel admin para definir metas |
-| `src/components/dashboard/GoalProgress.tsx` | Componente de barra de progresso com indicador visual |
-
-## 6. Alteracoes em arquivos existentes
+### 4. Arquivos Alterados
 
 | Arquivo | Alteracao |
 |---------|-----------|
-| `AdminPanel.tsx` | Adicionar aba "Metas" com GoalsConfig |
-| `CloserDetailPage.tsx` | Integrar GoalProgress nos MetricCards |
-| `SDRDetailPage.tsx` | Integrar GoalProgress nos SDRMetricCards |
-| `MetricCard.tsx` | Aceitar prop opcional `goal` para exibir barra de progresso |
-| `SDRMetricCard.tsx` | Aceitar prop opcional `goal` para exibir barra de progresso |
+| Migracao SQL | Adicionar `user` ao enum, atualizar RLS |
+| `src/contexts/AuthContext.tsx` | Adicionar `isUser` ao contexto |
+| `src/pages/Index.tsx` | Detectar role `user` e redirecionar para view dedicada |
+| `src/components/dashboard/Sidebar.tsx` | Esconder sidebar para role `user` |
+| `src/components/dashboard/BottomNavigation.tsx` | Esconder ou simplificar para role `user` |
+| `src/components/dashboard/AdminPanel.tsx` | Adicionar `user` como opcao no Select de roles |
+| `src/components/dashboard/CreateUserDialog.tsx` | Adicionar `user` como opcao |
+
+### 5. Novo Componente
+
+| Arquivo | Descricao |
+|---------|-----------|
+| `src/components/dashboard/UserDashboard.tsx` | Pagina dedicada para role `user` que carrega automaticamente a entidade vinculada e exibe o detail page correspondente |
 
 ## Detalhes Tecnicos
 
-### SQL da migracao
+### SQL da Migracao
 
 ```sql
-CREATE TABLE public.goals (
-  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-  entity_type text NOT NULL,
-  entity_id uuid NOT NULL,
-  month date NOT NULL,
-  metric_key text NOT NULL,
-  target_value numeric NOT NULL DEFAULT 0,
-  created_by uuid,
-  created_at timestamptz NOT NULL DEFAULT now(),
-  updated_at timestamptz NOT NULL DEFAULT now(),
-  UNIQUE (entity_type, entity_id, month, metric_key)
-);
+-- Adicionar nova role
+ALTER TYPE public.app_role ADD VALUE 'user';
 
-ALTER TABLE public.goals ENABLE ROW LEVEL SECURITY;
-
--- Admins gerenciam tudo
-CREATE POLICY "Admins can manage all goals"
-  ON public.goals FOR ALL
-  USING (has_role(auth.uid(), 'admin'::app_role))
-  WITH CHECK (has_role(auth.uid(), 'admin'::app_role));
-
--- Managers podem visualizar
-CREATE POLICY "Managers can view goals"
-  ON public.goals FOR SELECT
-  USING (has_role(auth.uid(), 'manager'::app_role));
-
--- Usuarios vinculados podem ver metas das suas entidades
-CREATE POLICY "Users can view their entity goals"
-  ON public.goals FOR SELECT
+-- Permitir que users vejam apenas suas entidades vinculadas (closers)
+CREATE POLICY "Users can view linked closers"
+  ON public.closers FOR SELECT
   USING (
-    is_linked_to_entity(auth.uid(), entity_type, entity_id)
+    has_role(auth.uid(), 'user'::app_role)
+    AND is_linked_to_entity(auth.uid(), 'closer', id)
   );
 
--- Trigger para updated_at
-CREATE TRIGGER update_goals_updated_at
-  BEFORE UPDATE ON public.goals
-  FOR EACH ROW
-  EXECUTE FUNCTION update_updated_at_column();
+-- Permitir que users vejam apenas suas entidades vinculadas (sdrs)
+CREATE POLICY "Users can view linked sdrs"
+  ON public.sdrs FOR SELECT
+  USING (
+    has_role(auth.uid(), 'user'::app_role)
+    AND is_linked_to_entity(auth.uid(), 'sdr', id)
+  );
+
+-- Permitir que users insiram metricas para suas entidades
+CREATE POLICY "Users can insert metrics for linked closers"
+  ON public.metrics FOR INSERT
+  WITH CHECK (
+    has_role(auth.uid(), 'user'::app_role)
+    AND is_linked_to_entity(auth.uid(), 'closer', closer_id)
+    AND created_by = auth.uid()
+  );
+
+-- Permitir que users insiram metricas SDR para suas entidades
+CREATE POLICY "Users can insert sdr_metrics for linked sdrs"
+  ON public.sdr_metrics FOR INSERT
+  WITH CHECK (
+    has_role(auth.uid(), 'user'::app_role)
+    AND is_linked_to_entity(auth.uid(), 'sdr', sdr_id)
+    AND created_by = auth.uid()
+  );
 ```
 
-### Fluxo de exibicao
+### Logica do UserDashboard
 
-Nos cards de metricas, a barra de progresso so aparece quando existe uma meta definida para aquele mes/metrica. O calculo e simples: `(valorAtual / metaDefinida) * 100`.
+O componente `UserDashboard` ira:
+1. Buscar `user_entity_links` do usuario logado
+2. Identificar se e Closer ou SDR
+3. Renderizar o `CloserDetailPage` ou `SDRDetailPage` correspondente
+4. Sem navegacao lateral - layout limpo e focado
+5. Header simplificado com apenas o nome e botao de logout
+
+### Mudanca no Index.tsx
+
+```text
+if (role === 'user') {
+  return <UserDashboard />  // Layout dedicado sem sidebar
+} else {
+  return <Layout com Sidebar>  // Layout atual
+}
+```
+
+### Select de Roles no Admin
+
+Atualizar o dropdown de roles para incluir a opcao "Usuário" alem de Admin, Gerente e Visualizador.
 
