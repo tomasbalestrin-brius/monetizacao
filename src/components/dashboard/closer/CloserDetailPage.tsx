@@ -16,7 +16,9 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { MonthSelector, getMonthPeriod } from '@/components/dashboard/MonthSelector';
+import { WeekSelector, getWeeksOfMonth } from '@/components/dashboard/WeekSelector';
 import { PullToRefresh } from '@/components/ui/PullToRefresh';
+import { parseDateString } from '@/lib/utils';
 import { MetricCard } from '@/components/dashboard/MetricCard';
 import { CloserWeeklyComparisonChart } from './CloserWeeklyComparisonChart';
 import { CloserDataTable } from './CloserDataTable';
@@ -106,6 +108,7 @@ export function CloserDetailPage({
   const [isMetricsDialogOpen, setIsMetricsDialogOpen] = useState(false);
   const [editingMetric, setEditingMetric] = useState<CloserMetricRecord | undefined>();
   const [deletingMetricId, setDeletingMetricId] = useState<string | null>(null);
+  const [selectedWeek, setSelectedWeek] = useState<string | null>(null);
   
   const deleteMetric = useDeleteMetric();
   
@@ -132,12 +135,31 @@ export function CloserDetailPage({
   }, [closers, squadSlug]);
 
   const closer = squadClosers.find((c) => c.id === closerId);
-  const aggregatedMetrics = metrics && metrics.length > 0 ? calculateAggregatedMetrics(metrics, squadSlug) : null;
+
+  // Week filtering
+  const weekFilteredMetrics = useMemo(() => {
+    if (!metrics || !selectedWeek) return metrics || [];
+    const weeks = getWeeksOfMonth(selectedMonth);
+    const activeWeek = weeks.find(w => w.weekKey === selectedWeek);
+    if (!activeWeek) return metrics;
+    return metrics.filter(m => {
+      const date = parseDateString(m.period_start);
+      return date >= activeWeek.startDate && date <= activeWeek.endDate;
+    });
+  }, [metrics, selectedWeek, selectedMonth]);
+
+  const aggregatedMetrics = weekFilteredMetrics.length > 0 ? calculateAggregatedMetrics(weekFilteredMetrics, squadSlug) : null;
 
   // Swipe navigation between closers in the same squad
   const handleNavigateToCloser = useCallback((id: string) => {
     setSearchParams({ module: squadSlug, closer: id });
+    setSelectedWeek(null);
   }, [setSearchParams, squadSlug]);
+
+  const handleMonthChange = useCallback((month: Date) => {
+    setSelectedWeek(null);
+    onMonthChange(month);
+  }, [onMonthChange]);
 
   const {
     currentIndex,
@@ -265,7 +287,12 @@ export function CloserDetailPage({
             
             <MonthSelector
               selectedMonth={selectedMonth}
-              onMonthChange={onMonthChange}
+              onMonthChange={handleMonthChange}
+            />
+            <WeekSelector
+              selectedMonth={selectedMonth}
+              selectedWeek={selectedWeek}
+              onWeekChange={setSelectedWeek}
             />
           </div>
         </div>
@@ -415,7 +442,7 @@ export function CloserDetailPage({
         {isLoadingMetrics ? (
           <ChartSkeleton height={350} />
         ) : (
-          <CloserWeeklyComparisonChart metrics={metrics || []} />
+          <CloserWeeklyComparisonChart metrics={metrics || []} activeWeekKey={selectedWeek} />
         )}
 
         {/* Data Table */}
@@ -423,7 +450,7 @@ export function CloserDetailPage({
           <TableSkeleton rows={5} columns={8} />
         ) : (
           <CloserDataTable 
-            metrics={metrics || []} 
+            metrics={weekFilteredMetrics} 
             onEditMetric={handleEditMetric}
             onDeleteMetric={handleDeleteMetric}
           />

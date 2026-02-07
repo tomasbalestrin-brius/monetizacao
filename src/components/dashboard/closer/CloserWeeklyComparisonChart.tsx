@@ -9,6 +9,7 @@ import {
   ResponsiveContainer,
   Legend,
   LabelList,
+  Cell,
 } from 'recharts';
 import { format, startOfWeek } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -18,6 +19,7 @@ import { cn, parseDateString } from '@/lib/utils';
 
 interface CloserWeeklyComparisonChartProps {
   metrics: CloserMetricRecord[];
+  activeWeekKey?: string | null;
 }
 
 interface WeeklyData {
@@ -164,8 +166,16 @@ const renderCurrencyLabel = (props: any) => {
   );
 };
 
-export function CloserWeeklyComparisonChart({ metrics }: CloserWeeklyComparisonChartProps) {
+export function CloserWeeklyComparisonChart({ metrics, activeWeekKey }: CloserWeeklyComparisonChartProps) {
   const weeklyData = useMemo(() => groupMetricsByWeek(metrics), [metrics]);
+
+  const chartData = useMemo(() => {
+    if (!activeWeekKey) return weeklyData.map(w => ({ ...w, opacity: 1 }));
+    return weeklyData.map(w => ({
+      ...w,
+      opacity: w.weekKey === activeWeekKey ? 1 : 0.35,
+    }));
+  }, [weeklyData, activeWeekKey]);
 
   const comparison: WeeklyComparison = useMemo(() => {
     if (weeklyData.length < 2) {
@@ -176,8 +186,22 @@ export function CloserWeeklyComparisonChart({ metrics }: CloserWeeklyComparisonC
       };
     }
 
-    const current = weeklyData[weeklyData.length - 1];
-    const previous = weeklyData[weeklyData.length - 2];
+    let currentIdx = weeklyData.length - 1;
+    if (activeWeekKey) {
+      const idx = weeklyData.findIndex(w => w.weekKey === activeWeekKey);
+      if (idx >= 0) currentIdx = idx;
+    }
+
+    if (currentIdx === 0) {
+      return {
+        current: weeklyData[0],
+        previous: null,
+        changes: { calls: null, sales: null, revenue: null, entries: null },
+      };
+    }
+
+    const current = weeklyData[currentIdx];
+    const previous = weeklyData[currentIdx - 1];
 
     return {
       current,
@@ -189,7 +213,7 @@ export function CloserWeeklyComparisonChart({ metrics }: CloserWeeklyComparisonC
         entries: calculateChange(current.entries, previous.entries),
       },
     };
-  }, [weeklyData]);
+  }, [weeklyData, activeWeekKey]);
 
   // Vibrant color palette
   const chartColors = {
@@ -232,7 +256,7 @@ export function CloserWeeklyComparisonChart({ metrics }: CloserWeeklyComparisonC
       </div>
 
       <ResponsiveContainer width="100%" height={320}>
-        <BarChart data={weeklyData} barCategoryGap="15%" barGap={2}>
+        <BarChart data={chartData} barCategoryGap="15%" barGap={2}>
           <defs>
             <linearGradient id="gradientCalls" x1="0" y1="0" x2="0" y2="1">
               <stop offset="0%" stopColor={chartColors.calls} stopOpacity={1} />
@@ -298,6 +322,9 @@ export function CloserWeeklyComparisonChart({ metrics }: CloserWeeklyComparisonC
             radius={[6, 6, 0, 0]}
           >
             <LabelList dataKey="calls" content={renderCustomLabel} />
+            {chartData.map((entry, index) => (
+              <Cell key={`calls-${index}`} fillOpacity={entry.opacity} />
+            ))}
           </Bar>
           <Bar
             dataKey="sales"
@@ -306,6 +333,9 @@ export function CloserWeeklyComparisonChart({ metrics }: CloserWeeklyComparisonC
             radius={[6, 6, 0, 0]}
           >
             <LabelList dataKey="sales" content={renderCustomLabel} />
+            {chartData.map((entry, index) => (
+              <Cell key={`sales-${index}`} fillOpacity={entry.opacity} />
+            ))}
           </Bar>
         </BarChart>
       </ResponsiveContainer>
