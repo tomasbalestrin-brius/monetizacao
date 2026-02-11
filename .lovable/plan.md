@@ -1,36 +1,67 @@
 
 
-# Adicionar Funil "Reels magnético" para Jaque
+# Permitir Edicao de Todos os Dados do SDR Vinculado
 
-## O que precisa ser feito
+## Problema Atual
 
-Inserir um registro semente na tabela `sdr_metrics` para a SDR Jaque com o funil "Reels magnético". Isso fara com que o funil apareca automaticamente no seletor de funis do formulario de metricas e na pagina de detalhe da Jaque.
+As politicas de seguranca (RLS) atuais exigem que o usuario so pode editar/excluir metricas que **ele mesmo criou** (`created_by = auth.uid()`). Dados importados do Google Sheets tem `created_by = null`, entao o usuario nao consegue edita-los.
 
-## Como funciona
+## Solucao
 
-O sistema atual descobre os funis disponiveis consultando valores unicos da coluna `funnel` em `sdr_metrics` para cada SDR. Nao existe uma tabela separada de funis. Portanto, basta inserir um registro com valores zerados para o funil aparecer.
+Alterar as politicas de UPDATE e DELETE para usuarios com role `user` para que possam gerenciar **qualquer metrica** do SDR vinculado, independente de quem criou.
 
-## Execucao
+## Alteracoes no Banco de Dados
 
-Uma unica query SQL via migracao:
+Substituir 4 politicas existentes por 2 novas:
+
+```text
+REMOVER:
+- "Users can update sdr_metrics for linked sdrs" (UPDATE com created_by check)
+- "Users can update their own sdr_metrics" (UPDATE com created_by check)
+- "Users can delete sdr_metrics for linked sdrs" (DELETE com created_by check)  
+- "Users can delete their own sdr_metrics" (DELETE com created_by check)
+
+CRIAR:
+- "Users can update sdr_metrics for linked sdrs" (UPDATE apenas com is_linked_to_entity)
+- "Users can delete sdr_metrics for linked sdrs" (DELETE apenas com is_linked_to_entity)
+```
+
+### SQL da Migracao
 
 ```sql
-INSERT INTO public.sdr_metrics (sdr_id, date, funnel, activated, scheduled, scheduled_rate, scheduled_same_day, attended, attendance_rate, sales, conversion_rate, source)
-VALUES (
-  '35bbbb76-8acf-49af-bfb6-7e73ff23ea77',
-  '2026-02-01',
-  'Reels magnético',
-  0, 0, 0, 0, 0, 0, 0, 0,
-  'manual'
-);
+-- Remove politicas antigas de UPDATE
+DROP POLICY IF EXISTS "Users can update sdr_metrics for linked sdrs" ON public.sdr_metrics;
+DROP POLICY IF EXISTS "Users can update their own sdr_metrics" ON public.sdr_metrics;
+
+-- Remove politicas antigas de DELETE
+DROP POLICY IF EXISTS "Users can delete sdr_metrics for linked sdrs" ON public.sdr_metrics;
+DROP POLICY IF EXISTS "Users can delete their own sdr_metrics" ON public.sdr_metrics;
+
+-- Nova politica de UPDATE: usuario pode editar qualquer metrica do SDR vinculado
+CREATE POLICY "Users can update sdr_metrics for linked sdrs"
+  ON public.sdr_metrics FOR UPDATE
+  USING (
+    has_role(auth.uid(), 'user'::app_role)
+    AND is_linked_to_entity(auth.uid(), 'sdr'::text, sdr_id)
+  )
+  WITH CHECK (
+    has_role(auth.uid(), 'user'::app_role)
+    AND is_linked_to_entity(auth.uid(), 'sdr'::text, sdr_id)
+  );
+
+-- Nova politica de DELETE: usuario pode excluir qualquer metrica do SDR vinculado
+CREATE POLICY "Users can delete sdr_metrics for linked sdrs"
+  ON public.sdr_metrics FOR DELETE
+  USING (
+    has_role(auth.uid(), 'user'::app_role)
+    AND is_linked_to_entity(auth.uid(), 'sdr'::text, sdr_id)
+  );
 ```
 
 ## Resultado
 
-Apos a insercao:
-- O funil "Reels magnetico" aparecera no seletor de funis ao selecionar Jaque no formulario de metricas
-- A pagina de detalhe da Jaque mostrara "Reels magnetico" no filtro de funil
-- Os funis da Jaque serao: MPM, Reels magnetico, Teste
-
-Nenhum arquivo de codigo precisa ser alterado.
+- Usuarios com role `user` poderao editar e excluir **todas** as metricas do SDR vinculado (manuais e importadas)
+- Admins e managers mantem acesso total
+- A politica de INSERT continua exigindo `created_by = auth.uid()` para rastreabilidade
+- Nenhuma alteracao no frontend e necessaria
 
