@@ -18,7 +18,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 
-export type ModuleId = 'dashboard' | 'eagles' | 'alcateia' | 'sharks' | 'sdrs' | 'reports' | 'admin' | 'goals' | 'meetings';
+export type ModuleId = 'dashboard' | 'eagles' | 'sharks' | 'sdrs' | 'reports' | 'admin' | 'goals' | 'meetings';
 
 interface MenuItem {
   id: ModuleId;
@@ -30,7 +30,6 @@ interface MenuItem {
 
 const squadItems: MenuItem[] = [
   { id: 'eagles', label: 'Squad Eagles', icon: Zap, permission: 'eagles', color: 'text-eagles' },
-  { id: 'alcateia', label: 'Squad Alcateia', icon: Shield, permission: 'alcateia', color: 'text-alcateia' },
   { id: 'sharks', label: 'Squad Sharks', icon: TrendingUp, permission: 'sharks', color: 'text-sharks' },
 ];
 

@@ -23,14 +23,6 @@ const getSquadConfig = (slug: string) => {
         headerBg: 'from-eagles/20 via-eagles/10 to-transparent',
         badgeClass: 'border-eagles/50 text-eagles bg-eagles/10',
       };
-    case 'alcateia':
-      return { 
-        variant: 'alcateia' as const, 
-        icon: Shield, 
-        gradient: 'gradient-alcateia',
-        headerBg: 'from-alcateia/20 via-alcateia/10 to-transparent',
-        badgeClass: 'border-alcateia/50 text-alcateia bg-alcateia/10',
-      };
     case 'sharks':
       return { 
         variant: 'sharks' as const, 

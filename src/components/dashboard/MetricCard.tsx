@@ -21,7 +21,7 @@ interface MetricCardProps {
   isPercentage?: boolean;
   showProgress?: boolean;
   className?: string;
-  variant?: 'default' | 'eagles' | 'alcateia' | 'sharks' | 'success' | 'warning' | 'destructive';
+  variant?: 'default' | 'eagles' | 'sharks' | 'success' | 'warning' | 'destructive';
   goalTarget?: number | null;
 }
 
@@ -62,8 +62,6 @@ export function MetricCard({
     switch (variant) {
       case 'eagles':
         return 'bg-eagles/20 text-eagles';
-      case 'alcateia':
-        return 'bg-alcateia/20 text-alcateia';
       case 'sharks':
         return 'bg-sharks/20 text-sharks';
       case 'success':
@@ -81,8 +79,6 @@ export function MetricCard({
     switch (variant) {
       case 'eagles':
         return 'bg-eagles';
-      case 'alcateia':
-        return 'bg-alcateia';
       case 'sharks':
         return 'bg-sharks';
       case 'success':

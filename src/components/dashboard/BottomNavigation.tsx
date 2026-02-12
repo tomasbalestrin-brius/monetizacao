@@ -25,7 +25,7 @@ export function BottomNavigation({ activeModule, onModuleChange }: BottomNavigat
   };
 
   // Check if current module is a squad page
-  const isSquadActive = ['eagles', 'alcateia', 'sharks'].includes(activeModule);
+  const isSquadActive = ['eagles', 'sharks'].includes(activeModule);
   const getActiveState = (itemId: ModuleId) => {
     if (itemId === 'eagles' && isSquadActive) return true;
     return activeModule === itemId;

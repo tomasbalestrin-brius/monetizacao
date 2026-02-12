@@ -56,9 +56,6 @@ function calculateAggregatedMetrics(metrics: CloserMetricRecord[], squadSlug: st
     };
   }
 
-  // Alcateia NÃO aplica valores líquidos - exibe bruto
-  const isAlcateia = squadSlug.toLowerCase() === 'alcateia';
-
   const totalCalls = metrics.reduce((sum, m) => sum + (m.calls || 0), 0);
   const grossSales = metrics.reduce((sum, m) => sum + (m.sales || 0), 0);
   const grossRevenue = metrics.reduce((sum, m) => sum + (m.revenue || 0), 0);
@@ -67,10 +64,10 @@ function calculateAggregatedMetrics(metrics: CloserMetricRecord[], squadSlug: st
   const totalCancellationValue = metrics.reduce((sum, m) => sum + (m.cancellation_value || 0), 0);
   const totalCancellationEntries = metrics.reduce((sum, m) => sum + (m.cancellation_entries || 0), 0);
 
-  // Valores líquidos EXCETO para Alcateia
-  const totalSales = isAlcateia ? grossSales : grossSales - totalCancellations;
-  const totalRevenue = isAlcateia ? grossRevenue : grossRevenue - totalCancellationValue;
-  const totalEntries = isAlcateia ? grossEntries : grossEntries - totalCancellationEntries;
+  // Net Sales
+  const totalSales = grossSales - totalCancellations;
+  const totalRevenue = grossRevenue - totalCancellationValue;
+  const totalEntries = grossEntries - totalCancellationEntries;
 
   // Tendências baseadas nos valores brutos da planilha
   const revenueTrend = metrics.reduce((sum, m) => sum + (m.revenue_trend || 0), 0);

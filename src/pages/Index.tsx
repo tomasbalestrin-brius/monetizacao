@@ -33,7 +33,7 @@ const Index = () => {
   // Handle URL module parameter
   useEffect(() => {
     const moduleParam = searchParams.get('module');
-    if (moduleParam && ['dashboard', 'eagles', 'alcateia', 'sharks', 'sdrs', 'reports', 'admin', 'goals', 'meetings'].includes(moduleParam)) {
+    if (moduleParam && ['dashboard', 'eagles', 'sharks', 'sdrs', 'reports', 'admin', 'goals', 'meetings'].includes(moduleParam)) {
       setActiveModule(moduleParam as ModuleId);
     }
   }, [searchParams]);
@@ -64,8 +64,6 @@ const Index = () => {
         return <DashboardOverview />;
       case 'eagles':
         return <SquadPage squadSlug="eagles" />;
-      case 'alcateia':
-        return <SquadPage squadSlug="alcateia" />;
       case 'sharks':
         return <SquadPage squadSlug="sharks" />;
       case 'admin':

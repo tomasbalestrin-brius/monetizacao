@@ -13,7 +13,7 @@ interface CombinedMetricCardProps {
   trend: number;
   trendLabel?: string;
   icon?: LucideIcon;
-  variant?: 'default' | 'eagles' | 'alcateia' | 'sharks' | 'success' | 'warning';
+  variant?: 'default' | 'eagles' | 'sharks' | 'success' | 'warning';
   className?: string;
 }
 
@@ -44,13 +44,6 @@ export function CombinedMetricCard({
           border: 'border-eagles/30',
           icon: 'text-eagles',
           trend: 'text-eagles',
-        };
-      case 'alcateia':
-        return {
-          bg: 'from-alcateia/15 to-alcateia/5',
-          border: 'border-alcateia/30',
-          icon: 'text-alcateia',
-          trend: 'text-alcateia',
         };
       case 'sharks':
         return {

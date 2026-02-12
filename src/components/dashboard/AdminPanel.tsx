@@ -12,7 +12,7 @@ import { CreateUserDialog } from './CreateUserDialog';
 import { EditUserLinksDialog } from './EditUserLinksDialog';
 import { GoalsConfig } from './GoalsConfig';
 
-const MODULES = ['dashboard', 'eagles', 'alcateia', 'sharks', 'sdrs', 'reports', 'admin'];
+const MODULES = ['dashboard', 'eagles', 'sharks', 'sdrs', 'reports', 'admin'];
 
 export function AdminPanel() {
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
