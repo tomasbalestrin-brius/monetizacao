@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useMeetingNotes, useAddNote, useDeleteNote } from '@/hooks/useMeetings';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
@@ -14,7 +14,16 @@ interface MeetingNotesProps {
 }
 
 export function MeetingNotes({ meetingId }: MeetingNotesProps) {
-  const [content, setContent] = useState('');
+  const STORAGE_KEY = `draft-note-${meetingId}`;
+  const [content, setContent] = useState(() => localStorage.getItem(STORAGE_KEY) || '');
+
+  useEffect(() => {
+    if (content) {
+      localStorage.setItem(STORAGE_KEY, content);
+    } else {
+      localStorage.removeItem(STORAGE_KEY);
+    }
+  }, [content, STORAGE_KEY]);
   const { data: notes = [], isLoading } = useMeetingNotes(meetingId);
   const addNote = useAddNote();
   const deleteNote = useDeleteNote();
@@ -24,6 +33,7 @@ export function MeetingNotes({ meetingId }: MeetingNotesProps) {
     try {
       await addNote.mutateAsync({ meeting_id: meetingId, content: content.trim() });
       setContent('');
+      localStorage.removeItem(STORAGE_KEY);
       toast.success('Nota adicionada');
     } catch {
       toast.error('Erro ao adicionar nota');

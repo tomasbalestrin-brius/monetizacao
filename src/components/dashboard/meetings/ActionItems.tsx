@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useActionItems, useAddActionItem, useUpdateActionItem, useDeleteActionItem, useProfiles } from '@/hooks/useMeetings';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -28,7 +28,16 @@ const statusColors: Record<string, string> = {
 };
 
 export function ActionItems({ meetingId }: ActionItemsProps) {
-  const [title, setTitle] = useState('');
+  const STORAGE_KEY = `draft-action-${meetingId}`;
+  const [title, setTitle] = useState(() => localStorage.getItem(STORAGE_KEY) || '');
+
+  useEffect(() => {
+    if (title) {
+      localStorage.setItem(STORAGE_KEY, title);
+    } else {
+      localStorage.removeItem(STORAGE_KEY);
+    }
+  }, [title, STORAGE_KEY]);
   const [assignedTo, setAssignedTo] = useState('');
   const [dueDate, setDueDate] = useState('');
   const [showForm, setShowForm] = useState(false);
@@ -49,6 +58,7 @@ export function ActionItems({ meetingId }: ActionItemsProps) {
         due_date: dueDate || undefined,
       });
       setTitle('');
+      localStorage.removeItem(STORAGE_KEY);
       setAssignedTo('');
       setDueDate('');
       setShowForm(false);
