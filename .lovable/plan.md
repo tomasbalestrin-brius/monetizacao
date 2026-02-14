@@ -1,52 +1,49 @@
 
 
-# Persistir Rascunhos de Texto em Reunioes
+# Permitir Edição de Notas nas Reuniões
 
 ## Problema
-Ao digitar uma nota ou descricao de acao e sair da aba (ou navegar para outra secao), o texto digitado e perdido antes de ser salvo.
+Atualmente, notas de reunião só podem ser adicionadas e excluídas. Não há como editar o conteúdo de uma nota já salva.
 
-## Solucao
-Usar `localStorage` para salvar automaticamente o rascunho enquanto o usuario digita. O texto sera restaurado ao voltar para a aba/reuniao e limpo apos o envio com sucesso.
+## Solução
+Adicionar funcionalidade de edição inline nas notas existentes, com um botão de editar (ícone de lápis) ao lado do botão de excluir.
 
-## Arquivos Alterados
+## Alterações
 
-### 1. `src/components/dashboard/meetings/MeetingNotes.tsx`
-- Salvar o conteudo do textarea no `localStorage` com chave unica por reuniao (`draft-note-{meetingId}`)
-- Ao montar o componente, carregar o rascunho do `localStorage`
-- Ao enviar a nota com sucesso, limpar o rascunho do `localStorage`
+### 1. `src/hooks/useMeetings.ts`
+- Criar o hook `useUpdateNote` com mutation que faz `UPDATE` na tabela `meeting_notes` atualizando o campo `content` pelo `id`.
+- Invalidar a query `['meeting-notes', meeting_id]` ao concluir.
 
-### 2. `src/components/dashboard/meetings/ActionItems.tsx`
-- Salvar o titulo da acao no `localStorage` com chave `draft-action-{meetingId}`
-- Ao montar/abrir o formulario, carregar o rascunho
-- Ao adicionar a acao com sucesso, limpar o rascunho
+### 2. `src/components/dashboard/meetings/MeetingNotes.tsx`
+- Adicionar estado `editingNoteId` e `editContent` para controlar qual nota está sendo editada.
+- Ao clicar no ícone de editar (Pencil), a nota entra em modo de edição: o texto vira um `Textarea` editável com botões de salvar (Check) e cancelar (X).
+- Ao salvar, chamar `useUpdateNote` e sair do modo de edição.
+- Importar o hook `useUpdateNote` e os ícones `Pencil`, `Check`, `X` do Lucide.
 
-## Detalhes Tecnicos
+## Detalhes Técnicos
 
-Exemplo da logica para MeetingNotes:
-
+Hook `useUpdateNote`:
 ```typescript
-const STORAGE_KEY = `draft-note-${meetingId}`;
-
-// Inicializar com rascunho salvo
-const [content, setContent] = useState(() => {
-  return localStorage.getItem(STORAGE_KEY) || '';
-});
-
-// Salvar no localStorage a cada alteracao
-useEffect(() => {
-  if (content) {
-    localStorage.setItem(STORAGE_KEY, content);
-  } else {
-    localStorage.removeItem(STORAGE_KEY);
-  }
-}, [content, STORAGE_KEY]);
-
-// Ao enviar com sucesso, limpar
-setContent('');
-localStorage.removeItem(STORAGE_KEY);
+export function useUpdateNote() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (input: { id: string; meeting_id: string; content: string }) => {
+      const { error } = await supabase
+        .from('meeting_notes')
+        .update({ content: input.content })
+        .eq('id', input.id);
+      if (error) throw error;
+    },
+    onSuccess: (_, vars) => {
+      queryClient.invalidateQueries({ queryKey: ['meeting-notes', vars.meeting_id] });
+    },
+  });
+}
 ```
 
-A mesma abordagem sera aplicada ao campo de titulo em ActionItems.
+No componente, cada nota terá dois modos:
+- **Visualização**: texto + botões editar/excluir
+- **Edição**: textarea com conteúdo atual + botões salvar/cancelar
 
-Nenhuma alteracao de banco de dados necessaria.
+Nenhuma alteração de banco de dados necessária.
 
