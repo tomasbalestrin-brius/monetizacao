@@ -1,15 +1,27 @@
 
 
-# Adicionar botão de voltar na página de Relatórios
+# Aplicar filtro de funil no Closer Detail Page
 
-Quando um funil específico é selecionado (via dropdown ou clique no card), não há botão para voltar à visão "Todos os Funis". 
+## Problema
+O `selectedFunnel` é declarado como estado mas nunca utilizado na filtragem. Os dados vêm da tabela `metrics` (que não tem campo `funnel_id`), e os dados por funil estão na tabela `funnel_daily_data`.
 
-## Alteração
+## Solução
 
-**`src/components/dashboard/reports/ReportsPage.tsx`**:
-- Quando `selectedFunnelId` não é `null`, exibir um botão de voltar (ícone `ArrowLeft`) ao lado do título ou próximo ao filtro
-- O botão chama `setSelectedFunnelId(null)` para resetar a visão
-- Também resetar o dropdown `Select` para "all"
+### 1. Buscar dados de `funnel_daily_data` quando um funil é selecionado
+- Usar o hook `useCloserFunnelData(closerId, selectedFunnel, periodStart, periodEnd)` já existente em `useFunnels.ts`
+- Quando `selectedFunnel` é `null` → usar `metrics` (tabela `metrics`, comportamento atual)
+- Quando `selectedFunnel` tem valor → usar dados de `funnel_daily_data` filtrados por funil
 
-Implementação simples: adicionar um botão com `ArrowLeft` antes do título quando há funil selecionado, similar ao padrão usado no `CloserDetailPage`.
+### 2. Adaptar dados de `funnel_daily_data` para o formato de métricas
+- Criar função de mapeamento: `funnel_daily_data` → formato compatível com `calculateAggregatedMetrics`
+- Campos: `calls_done` → `calls`, `sales_count` → `sales`, `sales_value` → `revenue`, etc.
+
+### 3. Atualizar `CloserDetailPage.tsx`
+- Importar `useCloserFunnelData` 
+- Adicionar query condicional baseada em `selectedFunnel`
+- Criar `useMemo` que combina week filter + funnel filter
+- Passar dados filtrados para cards, chart e tabela
+
+### Arquivos alterados
+- `src/components/dashboard/closer/CloserDetailPage.tsx` — lógica de filtragem e query condicional
 
