@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { format, startOfMonth, endOfMonth } from 'date-fns';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { MonthSelector, getMonthPeriod } from '@/components/dashboard/MonthSelector';
+import { PeriodFilter } from '@/components/dashboard/PeriodFilter';
 import { useAllFunnelsSummary, useFunnelReport, type FunnelSummary } from '@/hooks/useFunnels';
 import { MetricCardSkeletonGrid } from '@/components/dashboard/skeletons';
 import { FunnelChart } from './FunnelChart';
@@ -19,8 +20,19 @@ import {
 export function ReportsPage() {
   const [selectedMonth, setSelectedMonth] = useState(() => startOfMonth(new Date()));
   const [selectedFunnelId, setSelectedFunnelId] = useState<string | null>(null);
+  const [customPeriodStart, setCustomPeriodStart] = useState<string | undefined>(undefined);
+  const [customPeriodEnd, setCustomPeriodEnd] = useState<string | undefined>(undefined);
 
-  const { periodStart, periodEnd } = useMemo(() => getMonthPeriod(selectedMonth), [selectedMonth]);
+  const monthPeriod = useMemo(() => getMonthPeriod(selectedMonth), [selectedMonth]);
+
+  // Use custom period if set, otherwise use month period
+  const periodStart = customPeriodStart || monthPeriod.periodStart;
+  const periodEnd = customPeriodEnd || monthPeriod.periodEnd;
+
+  const handlePeriodChange = (start: string | undefined, end: string | undefined) => {
+    setCustomPeriodStart(start);
+    setCustomPeriodEnd(end);
+  };
 
   const { data: summaries, isLoading } = useAllFunnelsSummary(periodStart, periodEnd);
   const { data: detailedReport } = useFunnelReport(
@@ -85,7 +97,12 @@ export function ReportsPage() {
               ))}
             </SelectContent>
           </Select>
-          <MonthSelector selectedMonth={selectedMonth} onMonthChange={setSelectedMonth} />
+          <PeriodFilter
+            periodStart={customPeriodStart}
+            periodEnd={customPeriodEnd}
+            onPeriodChange={handlePeriodChange}
+          />
+          <MonthSelector selectedMonth={selectedMonth} onMonthChange={(m) => { setSelectedMonth(m); setCustomPeriodStart(undefined); setCustomPeriodEnd(undefined); }} />
         </div>
       </div>
 
