@@ -1,11 +1,19 @@
 
-# Adicionar funil "Social Selling Cleiton" para SDR Nathi
 
-Tarefa simples de inserção de dados. A SDR Nathi (id: `4f96ae9a-a3c3-4040-81bc-d50f083e86aa`) já possui 3 funis cadastrados. Preciso inserir o registro "Social Selling Cleiton" na tabela `sdr_funnels`.
+# Remover SDR Dienifer do sistema
 
-## Ação
-Inserir um registro na tabela `sdr_funnels` com:
-- `sdr_id`: `4f96ae9a-a3c3-4040-81bc-d50f083e86aa`
-- `funnel_name`: `Social Selling Cleiton`
+**SDR encontrada**: Dienifer (ID: `c963ddbf-c212-4b14-97f6-a7527e1be407`, tipo: sdr)
 
-Nenhuma alteração de código necessária — apenas uma operação de dados.
+## Dados associados que serão removidos
+- 32 registros em `sdr_metrics`
+- 1 registro em `sdr_funnels`
+- 0 vínculos de usuário
+- 0 metas
+
+## Ordem de exclusão (via insert tool)
+1. Deletar `sdr_metrics` onde `sdr_id = 'c963ddbf-...'`
+2. Deletar `sdr_funnels` onde `sdr_id = 'c963ddbf-...'`
+3. Deletar `sdrs` onde `id = 'c963ddbf-...'`
+
+Nenhuma alteração de código necessária — apenas operações de dados no banco.
+
