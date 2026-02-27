@@ -1,19 +1,13 @@
 
 
-# Remover SDR Dienifer do sistema
+# Adicionar funil "Social Selling Julia" para SDR Jaque
 
-**SDR encontrada**: Dienifer (ID: `c963ddbf-c212-4b14-97f6-a7527e1be407`, tipo: sdr)
+**SDR**: Jaque (ID: `35bbbb76-8acf-49af-bfb6-7e73ff23ea77`)
 
-## Dados associados que serão removidos
-- 32 registros em `sdr_metrics`
-- 1 registro em `sdr_funnels`
-- 0 vínculos de usuário
-- 0 metas
+## Ação
+Inserir registro na tabela `sdr_funnels`:
+- `sdr_id`: `35bbbb76-8acf-49af-bfb6-7e73ff23ea77`
+- `funnel_name`: `Social Selling Julia`
 
-## Ordem de exclusão (via insert tool)
-1. Deletar `sdr_metrics` onde `sdr_id = 'c963ddbf-...'`
-2. Deletar `sdr_funnels` onde `sdr_id = 'c963ddbf-...'`
-3. Deletar `sdrs` onde `id = 'c963ddbf-...'`
-
-Nenhuma alteração de código necessária — apenas operações de dados no banco.
+Nenhuma alteração de código — apenas operação de dados.
 
