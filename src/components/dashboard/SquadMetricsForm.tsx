@@ -41,6 +41,8 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/component
 import { PeriodTypeSelector, type PeriodType } from './PeriodTypeSelector';
 import { MonthSelector } from './MonthSelector';
 import { useClosers, type CloserMetricRecord } from '@/hooks/useMetrics';
+import { useUserFunnels } from '@/hooks/useFunnels';
+import { useSDRs } from '@/hooks/useSdrMetrics';
 
 const squadMetricsSchema = z.object({
   period_type: z.enum(['day', 'week', 'month']),
@@ -55,6 +57,10 @@ const squadMetricsSchema = z.object({
   cancellations: z.coerce.number().int().min(0).optional(),
   cancellation_value: z.coerce.number().min(0).optional(),
   cancellation_entries: z.coerce.number().min(0).optional(),
+  funnel_id: z.string().optional(),
+  leads_count: z.coerce.number().int().min(0).optional(),
+  qualified_count: z.coerce.number().int().min(0).optional(),
+  sdr_id: z.string().optional(),
 });
 
 export type SquadMetricsFormValues = z.infer<typeof squadMetricsSchema>;
@@ -171,6 +177,7 @@ export function SquadMetricsForm({
   submitLabel = 'Adicionar Métrica'
 }: SquadMetricsFormProps) {
   const { data: closers } = useClosers(squadId);
+  const { data: sdrs } = useSDRs();
   const [showCancellations, setShowCancellations] = useState(
     !!defaultMetric && (
       (defaultMetric.cancellations ?? 0) > 0 ||
@@ -234,8 +241,10 @@ export function SquadMetricsForm({
   const periodType = form.watch('period_type');
   const selectedDate = form.watch('selected_date');
   const selectedCloserId = form.watch('closer_id');
+  const salesValue = form.watch('sales');
   
   const selectedCloser = closers?.find(c => c.id === selectedCloserId);
+  const { data: userFunnels } = useUserFunnels(selectedCloserId || undefined);
 
   // Quick date setters
   const setQuickDate = (type: 'today' | 'yesterday' | 'thisWeek') => {
@@ -498,7 +507,135 @@ export function SquadMetricsForm({
           </div>
         </div>
 
-        {/* Revenue Metrics Section */}
+        {/* Funnel Data Section (optional) */}
+        {userFunnels && userFunnels.length > 0 && (
+          <div className="rounded-lg border border-violet-500/30 bg-violet-500/5 p-4 space-y-4">
+            <div className="flex items-center gap-2">
+              <div className="p-1.5 rounded-md bg-violet-500/20">
+                <Target className="h-4 w-4 text-violet-400" />
+              </div>
+              <h4 className="text-sm font-semibold text-violet-400">Dados do Funil</h4>
+              <span className="text-xs text-muted-foreground">(opcional)</span>
+            </div>
+
+            <FormField
+              control={form.control}
+              name="funnel_id"
+              render={({ field }) => (
+                <FormItem>
+                  <MetricInput
+                    icon={Target}
+                    label="Funil"
+                    iconBgColor="bg-violet-500/20"
+                    iconColor="text-violet-400"
+                  >
+                    <Select onValueChange={field.onChange} value={field.value || ''}>
+                      <FormControl>
+                        <SelectTrigger className="bg-background/50 border-border/50">
+                          <SelectValue placeholder="Selecione um funil" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {userFunnels.map((funnel) => (
+                          <SelectItem key={funnel.id} value={funnel.id}>
+                            {funnel.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </MetricInput>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <div className="grid grid-cols-2 gap-4">
+              <FormField
+                control={form.control}
+                name="leads_count"
+                render={({ field }) => (
+                  <FormItem>
+                    <MetricInput
+                      icon={User}
+                      label="Leads"
+                      iconBgColor="bg-violet-500/20"
+                      iconColor="text-violet-400"
+                    >
+                      <FormControl>
+                        <Input
+                          type="number"
+                          min={0}
+                          className="bg-background/50 border-border/50"
+                          {...field}
+                        />
+                      </FormControl>
+                    </MetricInput>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="qualified_count"
+                render={({ field }) => (
+                  <FormItem>
+                    <MetricInput
+                      icon={User}
+                      label="Qualificados"
+                      iconBgColor="bg-violet-500/20"
+                      iconColor="text-violet-400"
+                    >
+                      <FormControl>
+                        <Input
+                          type="number"
+                          min={0}
+                          className="bg-background/50 border-border/50"
+                          {...field}
+                        />
+                      </FormControl>
+                    </MetricInput>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+
+            {/* SDR de Origem - only when sales > 0 */}
+            {(salesValue ?? 0) > 0 && sdrs && sdrs.length > 0 && (
+              <FormField
+                control={form.control}
+                name="sdr_id"
+                render={({ field }) => (
+                  <FormItem>
+                    <MetricInput
+                      icon={User}
+                      label="SDR de Origem"
+                      iconBgColor="bg-violet-500/20"
+                      iconColor="text-violet-400"
+                    >
+                      <Select onValueChange={field.onChange} value={field.value || ''}>
+                        <FormControl>
+                          <SelectTrigger className="bg-background/50 border-border/50">
+                            <SelectValue placeholder="Selecione o SDR" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {sdrs.map((sdr) => (
+                            <SelectItem key={sdr.id} value={sdr.id}>
+                              {sdr.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </MetricInput>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            )}
+          </div>
+        )}
+
         <div className="rounded-lg border border-emerald-500/30 bg-emerald-500/5 p-4 space-y-4">
           <div className="flex items-center gap-2">
             <div className="p-1.5 rounded-md bg-emerald-500/20">

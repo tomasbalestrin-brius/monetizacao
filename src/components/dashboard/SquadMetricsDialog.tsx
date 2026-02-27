@@ -9,6 +9,7 @@ import {
 } from '@/components/ui/dialog';
 import { SquadMetricsForm, type SquadMetricsFormValues } from './SquadMetricsForm';
 import { useCreateMetric, useUpdateMetric, useSquads, type CloserMetricRecord } from '@/hooks/useMetrics';
+import { useCreateFunnelDailyData } from '@/hooks/useFunnels';
 
 interface SquadMetricsDialogProps {
   open: boolean;
@@ -29,6 +30,7 @@ export function SquadMetricsDialog({
 }: SquadMetricsDialogProps) {
   const createMetric = useCreateMetric();
   const updateMetric = useUpdateMetric();
+  const createFunnelData = useCreateFunnelDailyData();
   const { data: squads } = useSquads();
   
   const squad = squads?.find(s => s.slug.toLowerCase() === squadSlug.toLowerCase());
@@ -59,6 +61,23 @@ export function SquadMetricsDialog({
     } else {
       await createMetric.mutateAsync(payload);
     }
+
+    // Save funnel data if funnel_id is provided
+    if (values.funnel_id) {
+      await createFunnelData.mutateAsync([{
+        user_id: values.closer_id,
+        funnel_id: values.funnel_id,
+        date: formatDateString(period.start),
+        calls_scheduled: values.calls,
+        calls_done: values.calls,
+        sales_count: values.sales,
+        sales_value: values.revenue,
+        leads_count: values.leads_count ?? 0,
+        qualified_count: values.qualified_count ?? 0,
+        sdr_id: values.sdr_id || null,
+      }]);
+    }
+
     onOpenChange(false);
   };
 
