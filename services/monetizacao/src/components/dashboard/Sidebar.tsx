@@ -137,9 +137,7 @@ export function Sidebar({ isOpen, onClose, activeModule, onModuleChange }: Sideb
           {/* Header */}
           <div className="flex items-center justify-between mb-8">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl gradient-primary flex items-center justify-center">
-                <TrendingUp size={20} className="text-primary-foreground" />
-              </div>
+              <img src="/logo.png" alt="Bethel" className="w-10 h-10 object-contain" />
               <div>
                 <h2 className="text-lg font-bold text-sidebar-foreground">Monetização</h2>
                 <p className="text-xs text-muted-foreground">Dashboard de Vendas</p>

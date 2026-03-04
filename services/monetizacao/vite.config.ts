@@ -20,7 +20,7 @@ export default defineConfig(({ mode }) => ({
         name: "Bethel - Monetização",
         short_name: "Monetização",
         description: "Dashboard de Vendas e Métricas de Performance",
-        theme_color: "#6366f1",
+        theme_color: "#1e293b",
         background_color: "#0f172a",
         display: "standalone",
         orientation: "portrait",

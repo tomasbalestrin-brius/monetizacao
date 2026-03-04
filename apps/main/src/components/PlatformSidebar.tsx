@@ -107,9 +107,7 @@ export function PlatformSidebar({ isOpen, onClose }: PlatformSidebarProps) {
           {/* Header */}
           <div className="flex items-center justify-between p-4 border-b border-border">
             <div className="flex items-center gap-3">
-              <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center">
-                <span className="text-primary-foreground font-bold text-sm">B</span>
-              </div>
+              <img src="/logo.png" alt="Bethel" className="w-8 h-8 object-contain" />
               <div>
                 <h1 className="font-bold text-foreground text-sm">Bethel Platform</h1>
                 <p className="text-[10px] text-muted-foreground">Sistema de Gestao</p>
