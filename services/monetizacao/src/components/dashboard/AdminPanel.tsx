@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Trash2, Loader2, Plus, Settings, Database, Users, Link2, Edit2, Target } from 'lucide-react';
+import { Trash2, Loader2, Plus, Settings, Database, Users, Link2, Edit2, Target, ArrowRightLeft, Shield, Tag, FileText } from 'lucide-react';
 import { useUsers, useAssignRole, useTogglePermission } from '@/hooks/useUserManagement';
 import { DeleteUserDialog } from './DeleteUserDialog';
 import { useAllEntityLinks, useClosersForLinking, useSDRsForLinking } from '@/hooks/useUserEntityLinks';
@@ -12,6 +12,10 @@ import { MetricsTable } from './MetricsTable';
 import { CreateUserDialog } from './CreateUserDialog';
 import { EditUserLinksDialog } from './EditUserLinksDialog';
 import { GoalsConfig } from './GoalsConfig';
+import { DistributionRulesManager } from './DistributionRulesManager';
+import { QualificationRulesManager } from './QualificationRulesManager';
+import { NichesManager } from './NichesManager';
+import { ActivityLogsViewer } from './ActivityLogsViewer';
 
 const MODULES = ['dashboard', 'eagles', 'sharks', 'sdrs', 'reports', 'admin'];
 
@@ -60,6 +64,22 @@ export function AdminPanel() {
           <TabsTrigger value="goals" className="data-[state=active]:bg-background gap-2 px-4 py-2">
             <Target className="h-4 w-4" />
             Metas
+          </TabsTrigger>
+          <TabsTrigger value="distribution" className="data-[state=active]:bg-background gap-2 px-4 py-2">
+            <ArrowRightLeft className="h-4 w-4" />
+            Distribuição
+          </TabsTrigger>
+          <TabsTrigger value="qualification" className="data-[state=active]:bg-background gap-2 px-4 py-2">
+            <Shield className="h-4 w-4" />
+            Qualificação
+          </TabsTrigger>
+          <TabsTrigger value="niches" className="data-[state=active]:bg-background gap-2 px-4 py-2">
+            <Tag className="h-4 w-4" />
+            Nichos
+          </TabsTrigger>
+          <TabsTrigger value="logs" className="data-[state=active]:bg-background gap-2 px-4 py-2">
+            <FileText className="h-4 w-4" />
+            Auditoria
           </TabsTrigger>
         </TabsList>
 
@@ -199,6 +219,26 @@ export function AdminPanel() {
         {/* Goals Tab */}
         <TabsContent value="goals" className="space-y-6">
           <GoalsConfig />
+        </TabsContent>
+
+        {/* Distribution Rules Tab */}
+        <TabsContent value="distribution" className="space-y-6">
+          <DistributionRulesManager />
+        </TabsContent>
+
+        {/* Qualification Rules Tab */}
+        <TabsContent value="qualification" className="space-y-6">
+          <QualificationRulesManager />
+        </TabsContent>
+
+        {/* Niches Tab */}
+        <TabsContent value="niches" className="space-y-6">
+          <NichesManager />
+        </TabsContent>
+
+        {/* Activity Logs Tab */}
+        <TabsContent value="logs" className="space-y-6">
+          <ActivityLogsViewer />
         </TabsContent>
       </Tabs>
 
