@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from 'sonner';
 import { calculateTrend } from '@/lib/workingDays';
 import { parseDateString } from '@/lib/utils';
 export interface Squad {
@@ -320,13 +320,12 @@ export interface CreateMetricPayload {
 
 export function useCreateMetric() {
   const queryClient = useQueryClient();
-  const { toast } = useToast();
 
   return useMutation({
     mutationFn: async (metric: CreateMetricPayload) => {
       // Get the current user's ID
       const { data: { user } } = await supabase.auth.getUser();
-      
+
       const { data, error } = await supabase
         .from('metrics')
         .insert({
@@ -335,24 +334,17 @@ export function useCreateMetric() {
         })
         .select()
         .single();
-      
+
       if (error) throw error;
       return data;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['metrics'] });
       queryClient.invalidateQueries({ queryKey: ['closer-metrics'] });
-      toast({
-        title: 'Métrica adicionada',
-        description: 'A métrica foi salva com sucesso.',
-      });
+      toast.success('Métrica adicionada', { description: 'A métrica foi salva com sucesso.' });
     },
     onError: (error) => {
-      toast({
-        variant: 'destructive',
-        title: 'Erro',
-        description: 'Não foi possível salvar a métrica.',
-      });
+      toast.error('Erro', { description: 'Não foi possível salvar a métrica.' });
       console.error('Error creating metric:', error);
     },
   });
@@ -360,7 +352,6 @@ export function useCreateMetric() {
 
 export function useUpdateMetric() {
   const queryClient = useQueryClient();
-  const { toast } = useToast();
 
   return useMutation({
     mutationFn: async ({ id, ...metric }: Partial<Metric> & { id: string }) => {
@@ -370,7 +361,7 @@ export function useUpdateMetric() {
         .eq('id', id)
         .select()
         .single();
-      
+
       if (error) throw error;
       return data;
     },
@@ -378,17 +369,10 @@ export function useUpdateMetric() {
       queryClient.invalidateQueries({ queryKey: ['metrics'] });
       queryClient.invalidateQueries({ queryKey: ['closer-metrics'] });
       queryClient.invalidateQueries({ queryKey: ['squad-metrics'] });
-      toast({
-        title: 'Métrica atualizada',
-        description: 'A métrica foi atualizada com sucesso.',
-      });
+      toast.success('Métrica atualizada', { description: 'A métrica foi atualizada com sucesso.' });
     },
     onError: (error) => {
-      toast({
-        variant: 'destructive',
-        title: 'Erro',
-        description: 'Não foi possível atualizar a métrica.',
-      });
+      toast.error('Erro', { description: 'Não foi possível atualizar a métrica.' });
       console.error('Error updating metric:', error);
     },
   });
@@ -396,7 +380,6 @@ export function useUpdateMetric() {
 
 export function useDeleteMetric() {
   const queryClient = useQueryClient();
-  const { toast } = useToast();
 
   return useMutation({
     mutationFn: async (id: string) => {
@@ -404,7 +387,7 @@ export function useDeleteMetric() {
         .from('metrics')
         .delete()
         .eq('id', id);
-      
+
       if (error) throw error;
     },
     onSuccess: () => {
@@ -413,11 +396,7 @@ export function useDeleteMetric() {
       queryClient.invalidateQueries({ queryKey: ['squad-metrics'] });
     },
     onError: (error) => {
-      toast({
-        variant: 'destructive',
-        title: 'Erro',
-        description: 'Não foi possível remover a métrica.',
-      });
+      toast.error('Erro', { description: 'Não foi possível remover a métrica.' });
       console.error('Error deleting metric:', error);
     },
   });

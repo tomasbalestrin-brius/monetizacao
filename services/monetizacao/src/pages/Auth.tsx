@@ -5,7 +5,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from 'sonner';
 import { z } from 'zod';
 
 const emailSchema = z.string().email('Email inválido');
@@ -21,7 +21,6 @@ export default function Auth() {
   
   const { signIn, signUp, user, loading } = useAuth();
   const navigate = useNavigate();
-  const { toast } = useToast();
 
   useEffect(() => {
     if (!loading && user) {
@@ -59,45 +58,23 @@ export default function Auth() {
         const { error } = await signIn(email, password);
         if (error) {
           if (error.message.includes('Invalid login credentials')) {
-            toast({
-              variant: 'destructive',
-              title: 'Erro ao entrar',
-              description: 'Email ou senha incorretos',
-            });
+            toast.error('Erro ao entrar', { description: 'Email ou senha incorretos' });
           } else {
-            toast({
-              variant: 'destructive',
-              title: 'Erro ao entrar',
-              description: error.message,
-            });
+            toast.error('Erro ao entrar', { description: error.message });
           }
         } else {
-          toast({
-            title: 'Bem-vindo!',
-            description: 'Login realizado com sucesso',
-          });
+          toast.success('Bem-vindo!', { description: 'Login realizado com sucesso' });
         }
       } else {
         const { error } = await signUp(email, password);
         if (error) {
           if (error.message.includes('User already registered')) {
-            toast({
-              variant: 'destructive',
-              title: 'Erro ao cadastrar',
-              description: 'Este email já está cadastrado. Tente fazer login.',
-            });
+            toast.error('Erro ao cadastrar', { description: 'Este email já está cadastrado. Tente fazer login.' });
           } else {
-            toast({
-              variant: 'destructive',
-              title: 'Erro ao cadastrar',
-              description: error.message,
-            });
+            toast.error('Erro ao cadastrar', { description: error.message });
           }
         } else {
-          toast({
-            title: 'Conta criada!',
-            description: 'Sua conta foi criada com sucesso.',
-          });
+          toast.success('Conta criada!', { description: 'Sua conta foi criada com sucesso.' });
         }
       }
     } finally {
