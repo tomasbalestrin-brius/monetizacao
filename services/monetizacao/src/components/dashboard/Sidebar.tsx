@@ -13,13 +13,16 @@ import {
   Target,
   CalendarDays,
   Calendar,
+  Kanban,
+  Clock,
+  Archive,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 
-export type ModuleId = 'dashboard' | 'agenda' | 'eagles' | 'sharks' | 'sdrs' | 'reports' | 'admin' | 'goals' | 'meetings';
+export type ModuleId = 'dashboard' | 'agenda' | 'crm' | 'eagles' | 'sharks' | 'sdrs' | 'reports' | 'admin' | 'goals' | 'meetings' | 'availability' | 'cleanup';
 
 interface MenuItem {
   id: ModuleId;
@@ -37,10 +40,13 @@ const squadItems: MenuItem[] = [
 const mainItems: MenuItem[] = [
   { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard, permission: 'dashboard' },
   { id: 'agenda', label: 'Agenda', icon: Calendar, permission: 'agenda' },
+  { id: 'crm', label: 'CRM Leads', icon: Kanban, permission: 'crm' },
   { id: 'sdrs', label: 'SDRs', icon: Phone, permission: 'sdrs' },
   { id: 'meetings', label: 'Reunioes', icon: CalendarDays, permission: 'meetings' },
   { id: 'goals', label: 'Metas', icon: Target, permission: 'goals' },
   { id: 'reports', label: 'Relatorios', icon: FileText, permission: 'reports' },
+  { id: 'availability', label: 'Disponibilidade', icon: Clock, permission: 'availability' },
+  { id: 'cleanup', label: 'Limpeza', icon: Archive, permission: 'cleanup' },
 ];
 
 const adminItems: MenuItem[] = [
@@ -67,8 +73,8 @@ export function Sidebar({ isOpen, onClose, activeModule, onModuleChange }: Sideb
     return items.filter((item) => {
       if (isAdmin) return true;
       if (item.id === 'admin') return false;
-      // Closers only see the agenda
-      if (isCloser) return item.id === 'agenda';
+      // Closers see agenda + availability
+      if (isCloser) return item.id === 'agenda' || item.id === 'availability';
       // Lider sees everything except admin
       if (isLider) return true;
       // Show "Metas" and "Reunioes" for managers who have any module permission

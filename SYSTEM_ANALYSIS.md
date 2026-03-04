@@ -283,3 +283,11 @@ Componentes React (lazy loading + code splitting + ErrorBoundary por módulo)
 9. **Validação Zod**: Formulários de auth e métricas validados com schemas Zod.
 
 10. **Model polimórfico**: `user_entity_links` e `goals` usam `entity_type + entity_id` para referência flexível a closers ou SDRs.
+
+## 14. Documentacao por Servico
+
+Para documentacao especifica de cada parte do sistema, consulte:
+
+- **[README.md](README.md)** - Visao geral da plataforma, estrutura do monorepo, como rodar
+- **[apps/main/README.md](apps/main/README.md)** - Sistema Mae: layout, rotas, como adicionar novos servicos
+- **[services/monetizacao/README.md](services/monetizacao/README.md)** - Micro-frontend de Monetizacao: modulos, hooks, tabelas, integracao
