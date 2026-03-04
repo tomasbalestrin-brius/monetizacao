@@ -1358,11 +1358,16 @@ INSERT INTO public.closers (name, squad_id) VALUES
 ON CONFLICT DO NOTHING;
 
 -- ============================================================================
--- 11. MIGRATE EXISTING ROLES (if upgrading from old system)
+-- 11. ROLE MIGRATION NOTE
 -- ============================================================================
-
-UPDATE public.user_roles SET role = 'lider' WHERE role = 'manager';
-UPDATE public.user_roles SET role = 'closer' WHERE role = 'user';
+-- The has_role() function above handles mapping manager<->lider and user<->closer
+-- automatically, so existing 'manager' and 'user' roles will work without data migration.
+-- If you want to rename roles in the data, run these SEPARATELY (in a new SQL query)
+-- AFTER this migration has been committed:
+--
+--   UPDATE public.user_roles SET role = 'lider' WHERE role = 'manager';
+--   UPDATE public.user_roles SET role = 'closer' WHERE role = 'user';
+--
 
 -- ============================================================================
 -- DONE! All tables, functions, triggers, policies and indexes are created.
