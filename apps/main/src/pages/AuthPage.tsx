@@ -121,41 +121,32 @@ export function AuthPage() {
         <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-blue-600/10 rounded-full blur-3xl" />
         <div className="absolute bottom-1/4 right-1/4 w-72 h-72 bg-emerald-600/10 rounded-full blur-3xl" />
 
-        <div className="relative z-10 flex flex-col justify-center px-16 xl:px-24">
-          <div className="mb-8">
-            <img src="/logo.png" alt="Bethel" className="w-16 h-16 object-contain mb-6" />
-            <h1 className="text-4xl xl:text-5xl font-bold text-white leading-tight">
-              Bethel
-              <br />
-              <span className="text-blue-400">Platform</span>
-            </h1>
-          </div>
+        <div className="relative z-10 flex flex-col justify-between h-full px-16 xl:px-24 py-16">
+          <div>
+            <div className="mb-10">
+              <img src="/logo.png" alt="Bethel" className="w-20 h-20 object-contain mb-6" />
+              <h1 className="text-4xl xl:text-5xl font-bold text-white leading-tight">
+                Bethel
+                <br />
+                <span className="text-blue-400">Comercial</span>
+              </h1>
+            </div>
 
-          <p className="text-lg text-slate-400 mb-8 max-w-md">
-            A plataforma completa para gestão de vendas, SDR e monetização do seu negócio.
-          </p>
-
-          <div className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl p-6 max-w-md">
-            <p className="text-sm text-slate-400 mb-2">Nossos valores</p>
-            <p className="text-lg font-semibold text-white min-h-[56px] leading-relaxed">
-              <RotatingText />
+            <p className="text-lg text-slate-300 mb-10 max-w-md leading-relaxed">
+              A plataforma completa para gestão de vendas, SDR e monetização do seu negócio.
             </p>
+
+            <div className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl p-6 max-w-md">
+              <p className="text-xs text-slate-500 uppercase tracking-wider mb-3">Nossos valores</p>
+              <p className="text-lg font-semibold text-white min-h-[56px] leading-relaxed italic">
+                "<RotatingText />"
+              </p>
+            </div>
           </div>
 
-          <div className="flex gap-8 mt-12 text-sm text-slate-500">
-            <div>
-              <p className="text-2xl font-bold text-white">500+</p>
-              <p>Vendas gerenciadas</p>
-            </div>
-            <div>
-              <p className="text-2xl font-bold text-white">50+</p>
-              <p>Profissionais ativos</p>
-            </div>
-            <div>
-              <p className="text-2xl font-bold text-white">98%</p>
-              <p>Satisfação</p>
-            </div>
-          </div>
+          <p className="text-xs text-slate-600 mt-12">
+            &copy; {new Date().getFullYear()} Bethel Comercial. Todos os direitos reservados. Desenvolvido por <span className="text-slate-400">Bethel Tech</span>.
+          </p>
         </div>
       </div>
 
@@ -166,10 +157,10 @@ export function AuthPage() {
           <div className="lg:hidden text-center mb-8">
             <img src="/logo.png" alt="Bethel" className="w-14 h-14 object-contain mx-auto mb-4" />
             <h1 className="text-3xl font-bold text-white">
-              Bethel <span className="text-blue-400">Platform</span>
+              Bethel <span className="text-blue-400">Comercial</span>
             </h1>
-            <p className="text-slate-400 mt-2 text-sm">
-              <RotatingText />
+            <p className="text-slate-400 mt-2 text-sm italic">
+              "<RotatingText />"
             </p>
           </div>
 
