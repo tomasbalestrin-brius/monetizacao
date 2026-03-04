@@ -8,14 +8,14 @@ const emailSchema = z.string().email('Email inválido');
 const passwordSchema = z.string().min(8, 'Senha deve ter pelo menos 8 caracteres');
 
 const rotatingValues = [
-  'Excelência em Vendas',
-  'Relacionamento com o Cliente',
-  'Crescimento Sustentável',
-  'Inovação e Tecnologia',
-  'Resultado Consistente',
-  'Liderança e Influência',
-  'Disciplina e Foco',
-  'Compromisso com a Entrega',
+  'Você veio pra ser mais.',
+  'Nosso propósito de vida é realizado com o trabalho.',
+  'Não nos pergunte se fomos capazes, nos dê a missão.',
+  'Nossa liderança inspira confiança e ação.',
+  'Superamos expectativas e alcançamos resultados acima da média.',
+  'Sempre gratos, porém insatisfeitos!',
+  'Assumimos a responsabilidade e agimos rapidamente para resolver qualquer desafio.',
+  'Nosso ambiente é de frequência elevada, inspirando alta performance e crescimento contínuo.',
 ];
 
 function RotatingText() {
@@ -137,7 +137,7 @@ export function AuthPage() {
 
           <div className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl p-6 max-w-md">
             <p className="text-sm text-slate-400 mb-2">Nossos valores</p>
-            <p className="text-2xl font-semibold text-white h-10">
+            <p className="text-lg font-semibold text-white min-h-[56px] leading-relaxed">
               <RotatingText />
             </p>
           </div>
