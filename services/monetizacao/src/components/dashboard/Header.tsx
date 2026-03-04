@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Menu, User } from 'lucide-react';
+import { Menu, User, ArrowLeft } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
@@ -63,11 +63,19 @@ export function Header({ onMenuClick }: HeaderProps) {
           >
             <Menu size={20} />
           </Button>
-          
+
           <div className="hidden md:flex items-center gap-2 text-sm text-muted-foreground">
-            <span>Dashboard</span>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => { window.location.href = '/'; }}
+              className="gap-1 text-muted-foreground hover:text-foreground -ml-2"
+            >
+              <ArrowLeft size={16} />
+              <span>Início</span>
+            </Button>
             <span>/</span>
-            <span className="text-foreground font-medium">Visão Geral</span>
+            <span className="text-foreground font-medium">Monetização</span>
           </div>
         </div>
 

@@ -12,8 +12,10 @@
   "scripts": {
     "dev": "npm run dev --workspace=apps/main",
     "dev:monetizacao": "npm run dev --workspace=services/monetizacao",
+    "dev:sdr": "npm run dev --workspace=services/sdr",
     "build": "npm run build --workspace=apps/main",
     "build:monetizacao": "npm run build --workspace=services/monetizacao",
+    "build:sdr": "npm run build --workspace=services/sdr",
     "build:all": "npm run build --workspaces --if-present",
     "lint": "npm run lint --workspaces --if-present",
     "test": "npm run test --workspaces --if-present",

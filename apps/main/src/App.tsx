@@ -40,22 +40,9 @@ const MonetizacaoModule = React.lazy(
   () => import("@bethel/monetizacao").then((m) => ({ default: m.MonetizacaoRoutes }))
 );
 
-// SDR module placeholder - will be replaced when the SDR service is fully ported
-const SDRPlaceholder = React.lazy(() => Promise.resolve({
-  default: () => (
-    <div className="flex flex-col items-center justify-center min-h-[40vh] text-center">
-      <div className="w-16 h-16 rounded-2xl bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center mb-4">
-        <svg className="h-8 w-8 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
-        </svg>
-      </div>
-      <h2 className="text-xl font-bold text-foreground mb-2">Bethel SDR</h2>
-      <p className="text-muted-foreground max-w-md">
-        O modulo de CRM para SDRs esta em desenvolvimento. Em breve voce podera gerenciar leads, qualificacoes e agendamentos aqui.
-      </p>
-    </div>
-  ),
-}));
+const SDRModule = React.lazy(
+  () => import("@bethel/sdr").then((m) => ({ default: m.SDRRoutes }))
+);
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
@@ -67,7 +54,7 @@ const App = () => (
             {/* Public routes */}
             <Route path="/auth" element={<AuthPage />} />
 
-            {/* Protected platform routes */}
+            {/* Platform home - with platform layout */}
             <Route
               path="/"
               element={
@@ -77,39 +64,43 @@ const App = () => (
               }
             >
               <Route index element={<HomePage />} />
+            </Route>
 
-              {/* Monetização Microservice */}
-              <Route
-                path="monetizacao/*"
-                element={
+            {/* Monetização Microservice - own layout, no platform shell */}
+            <Route
+              path="/monetizacao"
+              element={
+                <ProtectedRoute>
                   <React.Suspense
                     fallback={
-                      <div className="flex items-center justify-center min-h-[40vh]">
+                      <div className="flex items-center justify-center min-h-screen">
                         <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
                       </div>
                     }
                   >
                     <MonetizacaoModule />
                   </React.Suspense>
-                }
-              />
+                </ProtectedRoute>
+              }
+            />
 
-              {/* Bethel SDR Microservice */}
-              <Route
-                path="sdr/*"
-                element={
+            {/* Bethel SDR Microservice - own layout, no platform shell */}
+            <Route
+              path="/sdr"
+              element={
+                <ProtectedRoute>
                   <React.Suspense
                     fallback={
-                      <div className="flex items-center justify-center min-h-[40vh]">
+                      <div className="flex items-center justify-center min-h-screen">
                         <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
                       </div>
                     }
                   >
-                    <SDRPlaceholder />
+                    <SDRModule />
                   </React.Suspense>
-                }
-              />
-            </Route>
+                </ProtectedRoute>
+              }
+            />
 
             {/* Catch-all */}
             <Route path="*" element={<NotFoundPage />} />

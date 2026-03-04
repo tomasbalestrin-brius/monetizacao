@@ -2,27 +2,24 @@ import React from 'react';
 import {
   LayoutDashboard,
   Users,
-  Phone,
   FileText,
   Settings,
   LogOut,
   X,
   TrendingUp,
   Zap,
-  Shield,
   Target,
   CalendarDays,
   Calendar,
-  Kanban,
   Clock,
-  Archive,
+  Home,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 
-export type ModuleId = 'dashboard' | 'agenda' | 'crm' | 'eagles' | 'sharks' | 'sdrs' | 'reports' | 'admin' | 'goals' | 'meetings' | 'availability' | 'cleanup';
+export type ModuleId = 'dashboard' | 'agenda' | 'eagles' | 'sharks' | 'reports' | 'admin' | 'goals' | 'meetings' | 'availability';
 
 interface MenuItem {
   id: ModuleId;
@@ -40,13 +37,13 @@ const squadItems: MenuItem[] = [
 const mainItems: MenuItem[] = [
   { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard, permission: 'dashboard' },
   { id: 'agenda', label: 'Agenda', icon: Calendar, permission: 'agenda' },
-  { id: 'crm', label: 'CRM Leads', icon: Kanban, permission: 'crm' },
-  { id: 'sdrs', label: 'SDRs', icon: Phone, permission: 'sdrs' },
-  { id: 'meetings', label: 'Reunioes', icon: CalendarDays, permission: 'meetings' },
-  { id: 'goals', label: 'Metas', icon: Target, permission: 'goals' },
-  { id: 'reports', label: 'Relatorios', icon: FileText, permission: 'reports' },
+  { id: 'reports', label: 'Relatórios', icon: FileText, permission: 'reports' },
   { id: 'availability', label: 'Disponibilidade', icon: Clock, permission: 'availability' },
-  { id: 'cleanup', label: 'Limpeza', icon: Archive, permission: 'cleanup' },
+];
+
+const leaderItems: MenuItem[] = [
+  { id: 'meetings', label: 'Reuniões', icon: CalendarDays, permission: 'meetings' },
+  { id: 'goals', label: 'Metas', icon: Target, permission: 'goals' },
 ];
 
 const adminItems: MenuItem[] = [
@@ -61,31 +58,29 @@ interface SidebarProps {
 }
 
 export function Sidebar({ isOpen, onClose, activeModule, onModuleChange }: SidebarProps) {
-  const { signOut, hasPermission, isAdmin, isManager } = useAuth();
+  const { signOut, hasPermission, isAdmin, isManager, isCloser, isLider, isAdminOrLider } = useAuth();
 
   const handleLogout = async () => {
     await signOut();
   };
 
-  const { isCloser, isLider, isAdminOrLider } = useAuth();
-
-  const filterItems = (items: MenuItem[]) => {
-    return items.filter((item) => {
-      if (isAdmin) return true;
-      if (item.id === 'admin') return false;
-      // Closers see agenda + availability
-      if (isCloser) return item.id === 'agenda' || item.id === 'availability';
-      // Lider sees everything except admin
-      if (isLider) return true;
-      // Show "Metas" and "Reunioes" for managers who have any module permission
-      if (item.id === 'goals' || item.id === 'meetings') return isManager;
-      return hasPermission(item.permission);
-    });
+  const handleBackToHome = () => {
+    window.location.href = '/';
   };
 
-  const filteredMainItems = filterItems(mainItems);
-  const filteredSquadItems = filterItems(squadItems);
-  const filteredAdminItems = filterItems(adminItems);
+  // All closers: Dashboard, Agenda, Relatórios, Disponibilidade
+  // Líder/Admin: + Reuniões, Metas, Squads
+  // Admin only: + Painel Admin
+  const filteredMainItems = mainItems.filter((item) => {
+    if (isAdmin || isLider) return true;
+    return hasPermission(item.permission);
+  });
+
+  const filteredLeaderItems = (isAdmin || isLider) ? leaderItems : [];
+
+  const filteredSquadItems = (isAdmin || isLider) ? squadItems : [];
+
+  const filteredAdminItems = isAdmin ? adminItems : [];
 
   const renderMenuItem = (item: MenuItem) => {
     const isActive = activeModule === item.id;
@@ -158,9 +153,20 @@ export function Sidebar({ isOpen, onClose, activeModule, onModuleChange }: Sideb
             </button>
           </div>
 
+          {/* Back to platform */}
+          <button
+            onClick={handleBackToHome}
+            className="w-full flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm text-muted-foreground hover:bg-sidebar-accent hover:text-foreground transition-colors mb-4"
+          >
+            <Home size={18} />
+            <span className="font-medium">Voltar ao Início</span>
+          </button>
+
+          <Separator className="bg-sidebar-border mb-4" />
+
           {/* Navigation */}
           <nav className="space-y-6 flex-1 overflow-y-auto">
-            {/* Main section */}
+            {/* Main section - all closers */}
             <div className="space-y-1">
               <p className="px-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">
                 Principal
@@ -168,7 +174,17 @@ export function Sidebar({ isOpen, onClose, activeModule, onModuleChange }: Sideb
               {filteredMainItems.map(renderMenuItem)}
             </div>
 
-            {/* Squads section */}
+            {/* Leader section - líder/admin only */}
+            {filteredLeaderItems.length > 0 && (
+              <div className="space-y-1">
+                <p className="px-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">
+                  Gestão
+                </p>
+                {filteredLeaderItems.map(renderMenuItem)}
+              </div>
+            )}
+
+            {/* Squads section - líder/admin only */}
             {filteredSquadItems.length > 0 && (
               <div className="space-y-1">
                 <p className="px-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">
