@@ -91,17 +91,18 @@ export function MonetizacaoModule() {
 export { ErrorBoundary } from '@/components/ErrorBoundary';
 
 // Re-export hooks for use by other services
-export { useMetrics } from '@/hooks/useMetrics';
-export { useSdrMetrics } from '@/hooks/useSdrMetrics';
+export { useSquads, useClosers, useMetrics, useTotalMetrics } from '@/hooks/useMetrics';
+export { useSDRs, useSDRMetrics, useSDRTotalMetrics } from '@/hooks/useSdrMetrics';
 export { useFunnels } from '@/hooks/useFunnels';
-export { useGoals } from '@/hooks/useGoals';
+export { useGoals, useAllGoals } from '@/hooks/useGoals';
 export { useMeetings } from '@/hooks/useMeetings';
 
 // Re-export utility functions
 export {
   getWorkingDaysInMonth,
-  getWorkingDaysElapsed,
-  projectMonthEnd,
+  getWorkingDaysBetween,
+  calculateTrend,
+  calculateTrendDetailed,
 } from '@/lib/workingDays';
 
 // Default export for simple usage
