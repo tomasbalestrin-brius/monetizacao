@@ -118,9 +118,7 @@ export function Sidebar({ isOpen, onClose, activeModule, onModuleChange }: Sideb
           {/* Header */}
           <div className="flex items-center justify-between mb-6">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-600 to-teal-600 flex items-center justify-center">
-                <Users size={20} className="text-white" />
-              </div>
+              <img src="/logo.png" alt="Bethel" className="w-10 h-10 object-contain" />
               <div>
                 <h2 className="text-lg font-bold text-sidebar-foreground">Bethel SDR</h2>
                 <p className="text-xs text-muted-foreground">CRM & Gestão de Leads</p>
