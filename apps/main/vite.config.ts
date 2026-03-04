@@ -3,11 +3,12 @@ import react from "@vitejs/plugin-react-swc";
 import path from "path";
 
 const MONETIZACAO_SRC = path.resolve(__dirname, "../../services/monetizacao/src");
+const SDR_SRC = path.resolve(__dirname, "../../services/sdr/src");
 
 /**
  * Custom plugin to resolve @/ alias based on which workspace the
- * importing file belongs to. Files inside services/monetizacao/
- * get @/ → services/monetizacao/src/, everything else gets @/ → apps/main/src/.
+ * importing file belongs to. Files inside each service get @/ resolved
+ * to their own src/, everything else gets @/ → apps/main/src/.
  */
 function workspaceAliasPlugin(): Plugin {
   return {
@@ -22,6 +23,15 @@ function workspaceAliasPlugin(): Plugin {
       if (importer.includes("services/monetizacao/")) {
         return this.resolve(
           path.resolve(MONETIZACAO_SRC, relativePart),
+          importer,
+          { skipSelf: true }
+        );
+      }
+
+      // If the importer is inside the sdr service, resolve to its src
+      if (importer.includes("services/sdr/")) {
+        return this.resolve(
+          path.resolve(SDR_SRC, relativePart),
           importer,
           { skipSelf: true }
         );
@@ -48,10 +58,14 @@ export default defineConfig({
   plugins: [workspaceAliasPlugin(), react()],
   resolve: {
     alias: {
-      // Resolve the @bethel/monetizacao package to its source entry point
+      // Resolve workspace packages to their source entry points
       "@bethel/monetizacao": path.resolve(
         __dirname,
         "../../services/monetizacao/src/module.tsx"
+      ),
+      "@bethel/sdr": path.resolve(
+        __dirname,
+        "../../services/sdr/src/module.tsx"
       ),
     },
     dedupe: ["react", "react-dom", "react-router-dom", "@tanstack/react-query"],
