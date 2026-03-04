@@ -1,116 +1,118 @@
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700;800&family=Inter:wght@300;400;500;600;700&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-/* Design System - Sales Dashboard Theme
-   All colors MUST be HSL.
+/* Design System - Bethel Identity
+   Primary (Navy):      hsl(224, 76%, 4%)
+   Accent (Royal Blue): hsl(240, 98%, 16%)
 */
 
 @layer base {
   :root {
     --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
+    --foreground: 224 76% 4%;
 
     --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
+    --card-foreground: 224 76% 4%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
+    --popover-foreground: 224 76% 4%;
 
-    --primary: 222.2 47.4% 11.2%;
-    --primary-foreground: 210 40% 98%;
+    --primary: 224 76% 4%;
+    --primary-foreground: 0 0% 100%;
 
-    --secondary: 210 40% 96.1%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
+    --secondary: 224 20% 94%;
+    --secondary-foreground: 224 76% 4%;
 
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
+    --muted: 224 20% 94%;
+    --muted-foreground: 224 20% 40%;
 
-    --accent: 210 40% 96.1%;
-    --accent-foreground: 222.2 47.4% 11.2%;
+    --accent: 240 98% 16%;
+    --accent-foreground: 0 0% 100%;
 
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
 
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 222.2 84% 4.9%;
+    --border: 224 20% 90%;
+    --input: 224 20% 90%;
+    --ring: 240 98% 16%;
 
     --radius: 0.75rem;
 
-    --sidebar-background: 0 0% 98%;
-    --sidebar-foreground: 240 5.3% 26.1%;
-    --sidebar-primary: 240 5.9% 10%;
-    --sidebar-primary-foreground: 0 0% 98%;
-    --sidebar-accent: 240 4.8% 95.9%;
-    --sidebar-accent-foreground: 240 5.9% 10%;
-    --sidebar-border: 220 13% 91%;
-    --sidebar-ring: 217.2 91.2% 59.8%;
+    --sidebar-background: 224 76% 4%;
+    --sidebar-foreground: 224 20% 90%;
+    --sidebar-primary: 240 98% 16%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 224 76% 8%;
+    --sidebar-accent-foreground: 224 20% 90%;
+    --sidebar-border: 224 76% 10%;
+    --sidebar-ring: 240 98% 16%;
 
     /* Squad accent colors */
     --eagles: 217 91% 60%;
     --eagles-light: 217 91% 70%;
-    --sharks: 152 69% 45%;
-    --sharks-light: 152 69% 55%;
+    --sharks: 160 84% 39%;
+    --sharks-light: 160 84% 50%;
 
-    /* Success/Warning/Info */
-    --success: 152 69% 45%;
+    /* Status colors */
+    --success: 160 84% 39%;
     --success-foreground: 0 0% 100%;
     --warning: 38 92% 50%;
     --warning-foreground: 0 0% 100%;
     --info: 217 91% 60%;
     --info-foreground: 0 0% 100%;
-    
-    /* Chart colors - Vibrant palette */
+
+    /* Chart colors */
     --chart-activated: 217 91% 60%;
-    --chart-scheduled: 152 69% 45%;
+    --chart-scheduled: 160 84% 39%;
     --chart-attended: 38 92% 50%;
     --chart-sales: 270 70% 60%;
   }
 
   .dark {
-    --background: 224 71% 4%;
-    --foreground: 213 31% 91%;
+    --background: 224 76% 4%;
+    --foreground: 224 20% 90%;
 
-    --card: 224 71% 6%;
-    --card-foreground: 213 31% 91%;
+    --card: 224 76% 6%;
+    --card-foreground: 224 20% 90%;
 
-    --popover: 224 71% 6%;
-    --popover-foreground: 213 31% 91%;
+    --popover: 224 76% 6%;
+    --popover-foreground: 224 20% 90%;
 
-    --primary: 217 91% 60%;
+    --primary: 240 98% 25%;
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 222 47% 11%;
-    --secondary-foreground: 213 31% 91%;
+    --secondary: 224 76% 8%;
+    --secondary-foreground: 224 20% 90%;
 
-    --muted: 223 47% 11%;
-    --muted-foreground: 215 20% 65%;
+    --muted: 224 76% 8%;
+    --muted-foreground: 224 20% 60%;
 
-    --accent: 222 47% 14%;
-    --accent-foreground: 213 31% 91%;
+    --accent: 240 98% 25%;
+    --accent-foreground: 0 0% 100%;
 
     --destructive: 0 63% 31%;
-    --destructive-foreground: 210 40% 98%;
+    --destructive-foreground: 0 0% 100%;
 
-    --border: 223 47% 14%;
-    --input: 223 47% 14%;
-    --ring: 217 91% 60%;
+    --border: 224 76% 10%;
+    --input: 224 76% 10%;
+    --ring: 240 98% 25%;
 
-    --sidebar-background: 224 71% 6%;
-    --sidebar-foreground: 213 31% 91%;
-    --sidebar-primary: 217 91% 60%;
+    --sidebar-background: 224 76% 3%;
+    --sidebar-foreground: 224 20% 85%;
+    --sidebar-primary: 240 98% 25%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 223 47% 11%;
-    --sidebar-accent-foreground: 213 31% 91%;
-    --sidebar-border: 223 47% 14%;
-    --sidebar-ring: 217 91% 60%;
+    --sidebar-accent: 224 76% 8%;
+    --sidebar-accent-foreground: 224 20% 85%;
+    --sidebar-border: 224 76% 10%;
+    --sidebar-ring: 240 98% 25%;
 
-    /* Squad accent colors - dark mode */
     --eagles: 217 91% 60%;
     --eagles-light: 217 91% 45%;
-    --sharks: 152 69% 45%;
-    --sharks-light: 152 69% 35%;
+    --sharks: 160 84% 39%;
+    --sharks-light: 160 84% 30%;
   }
 }
 
@@ -121,45 +123,42 @@
 
   body {
     @apply bg-background text-foreground antialiased;
-    /* PWA safe areas for devices with notch */
+    font-family: 'Inter', system-ui, sans-serif;
+    font-feature-settings: "rlig" 1, "calt" 1;
     padding-top: env(safe-area-inset-top);
     padding-left: env(safe-area-inset-left);
     padding-right: env(safe-area-inset-right);
   }
 
-  /* Prevent pull-to-refresh on mobile for PWA feel */
+  h1, h2, h3, h4, h5, h6 {
+    font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+  }
+
   html {
     overscroll-behavior: none;
   }
 }
 
-/* Shimmer animation for skeletons */
 .skeleton-shimmer {
-  background: linear-gradient(
-    90deg,
-    hsl(var(--muted)) 0%,
-    hsl(var(--muted-foreground) / 0.15) 50%,
-    hsl(var(--muted)) 100%
-  );
+  background: linear-gradient(90deg, hsl(var(--muted)) 0%, hsl(var(--muted-foreground) / 0.15) 50%, hsl(var(--muted)) 100%);
   background-size: 200% 100%;
   animation: shimmer 1.5s ease-in-out infinite;
 }
 
 @keyframes shimmer {
-  0% {
-    background-position: 200% 0;
-  }
-  100% {
-    background-position: -200% 0;
-  }
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
 }
 
-/* Safe area padding for bottom navigation */
 .safe-area-bottom {
   padding-bottom: env(safe-area-inset-bottom);
 }
 
 @layer utilities {
+  .font-display {
+    font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+  }
+
   .glass-card {
     @apply bg-card/80 backdrop-blur-sm border border-border/50 shadow-lg;
   }
@@ -172,17 +171,25 @@
     background: linear-gradient(135deg, hsl(var(--eagles)) 0%, hsl(var(--eagles-light)) 100%);
   }
 
-
   .gradient-sharks {
     background: linear-gradient(135deg, hsl(var(--sharks)) 0%, hsl(var(--sharks-light)) 100%);
   }
 
   .gradient-primary {
-    background: linear-gradient(135deg, hsl(var(--primary)) 0%, hsl(217 91% 50%) 100%);
+    background: linear-gradient(135deg, hsl(224 76% 4%) 0%, hsl(240 98% 16%) 100%);
+  }
+
+  .gradient-accent {
+    background: linear-gradient(135deg, hsl(240 98% 16%) 0%, hsl(224 76% 4%) 100%);
+  }
+
+  .gradient-card {
+    background: linear-gradient(180deg, hsl(0 0% 100%) 0%, hsl(224 20% 97%) 100%);
   }
 
   .text-gradient {
-    @apply bg-clip-text text-transparent bg-gradient-to-r from-primary to-primary/70;
+    @apply bg-clip-text text-transparent;
+    background-image: linear-gradient(135deg, hsl(224 76% 4%) 0%, hsl(240 98% 16%) 100%);
   }
 
   .animate-fade-in {
@@ -199,37 +206,20 @@
 }
 
 @keyframes fadeIn {
-  from {
-    opacity: 0;
-  }
-  to {
-    opacity: 1;
-  }
+  from { opacity: 0; }
+  to { opacity: 1; }
 }
 
 @keyframes slideUp {
-  from {
-    opacity: 0;
-    transform: translateY(10px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
 @keyframes scaleIn {
-  from {
-    opacity: 0;
-    transform: scale(0.95);
-  }
-  to {
-    opacity: 1;
-    transform: scale(1);
-  }
+  from { opacity: 0; transform: scale(0.95); }
+  to { opacity: 1; transform: scale(1); }
 }
 
-/* P0: Respect prefers-reduced-motion */
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
     animation-duration: 0.01ms !important;

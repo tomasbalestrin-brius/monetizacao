@@ -5,6 +5,7 @@ export default {
   content: [
     "./src/**/*.{ts,tsx}",
     "../../services/monetizacao/src/**/*.{ts,tsx}",
+    "../../services/sdr/src/**/*.{ts,tsx}",
     "../../packages/*/src/**/*.{ts,tsx}",
   ],
   prefix: "",
@@ -17,6 +18,10 @@ export default {
       },
     },
     extend: {
+      fontFamily: {
+        sans: ["Inter", "system-ui", "sans-serif"],
+        display: ["Plus Jakarta Sans", "system-ui", "sans-serif"],
+      },
       colors: {
         border: "hsl(var(--border))",
         input: "hsl(var(--input))",
@@ -64,10 +69,6 @@ export default {
         eagles: {
           DEFAULT: "hsl(var(--eagles))",
           light: "hsl(var(--eagles-light))",
-        },
-        alcateia: {
-          DEFAULT: "hsl(var(--alcateia))",
-          light: "hsl(var(--alcateia-light))",
         },
         sharks: {
           DEFAULT: "hsl(var(--sharks))",
