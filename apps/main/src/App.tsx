@@ -1,0 +1,96 @@
+import React from "react";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { TooltipProvider } from "@radix-ui/react-tooltip";
+import { Toaster } from "sonner";
+import { createSupabaseClient } from "@bethel/shared-supabase";
+import { AuthProvider } from "@bethel/shared-auth";
+import { ProtectedRoute } from "@/components/ProtectedRoute";
+import { PlatformLayout } from "@/layouts/PlatformLayout";
+import { AuthPage } from "@/pages/AuthPage";
+import { HomePage } from "@/pages/HomePage";
+import { NotFoundPage } from "@/pages/NotFoundPage";
+
+// Initialize Supabase client (singleton - must happen before any auth/data usage)
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+const supabaseKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+
+if (supabaseUrl && supabaseKey) {
+  createSupabaseClient(supabaseUrl, supabaseKey);
+}
+
+// Global query client for the platform
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 30 * 1000,
+      gcTime: 5 * 60 * 1000,
+      retry: 3,
+      retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
+      refetchOnWindowFocus: false,
+    },
+    mutations: {
+      retry: 1,
+    },
+  },
+});
+
+// Lazy-load microservice modules
+const MonetizacaoModule = React.lazy(
+  () => import("@bethel/monetizacao").then((m) => ({ default: m.MonetizacaoRoutes }))
+);
+
+const App = () => (
+  <QueryClientProvider client={queryClient}>
+    <TooltipProvider>
+      <AuthProvider>
+        <Toaster richColors position="top-right" />
+        <BrowserRouter>
+          <Routes>
+            {/* Public routes */}
+            <Route path="/auth" element={<AuthPage />} />
+
+            {/* Protected platform routes */}
+            <Route
+              path="/"
+              element={
+                <ProtectedRoute>
+                  <PlatformLayout />
+                </ProtectedRoute>
+              }
+            >
+              <Route index element={<HomePage />} />
+
+              {/* Monetização Microservice */}
+              <Route
+                path="monetizacao/*"
+                element={
+                  <React.Suspense
+                    fallback={
+                      <div className="flex items-center justify-center min-h-[40vh]">
+                        <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
+                      </div>
+                    }
+                  >
+                    <MonetizacaoModule />
+                  </React.Suspense>
+                }
+              />
+
+              {/* Future microservices can be added here:
+                  <Route path="crm/*" element={<CRMModule />} />
+                  <Route path="financeiro/*" element={<FinanceiroModule />} />
+                  <Route path="rh/*" element={<RHModule />} />
+              */}
+            </Route>
+
+            {/* Catch-all */}
+            <Route path="*" element={<NotFoundPage />} />
+          </Routes>
+        </BrowserRouter>
+      </AuthProvider>
+    </TooltipProvider>
+  </QueryClientProvider>
+);
+
+export default App;

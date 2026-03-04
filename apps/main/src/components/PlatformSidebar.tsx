@@ -1,0 +1,176 @@
+import React from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
+import { useAuth } from '@bethel/shared-auth';
+import {
+  LayoutDashboard,
+  TrendingUp,
+  Users,
+  Settings,
+  LogOut,
+  X,
+  ChevronRight,
+} from 'lucide-react';
+
+interface ServiceItem {
+  id: string;
+  label: string;
+  icon: React.ElementType;
+  path: string;
+  description: string;
+}
+
+const services: ServiceItem[] = [
+  {
+    id: 'home',
+    label: 'Início',
+    icon: LayoutDashboard,
+    path: '/',
+    description: 'Visão geral da plataforma',
+  },
+  {
+    id: 'monetizacao',
+    label: 'Monetização',
+    icon: TrendingUp,
+    path: '/monetizacao',
+    description: 'Vendas, métricas e performance',
+  },
+  // Future services:
+  // {
+  //   id: 'crm',
+  //   label: 'CRM',
+  //   icon: Users,
+  //   path: '/crm',
+  //   description: 'Gestão de relacionamento',
+  // },
+];
+
+interface PlatformSidebarProps {
+  isOpen: boolean;
+  onClose: () => void;
+}
+
+export function PlatformSidebar({ isOpen, onClose }: PlatformSidebarProps) {
+  const navigate = useNavigate();
+  const location = useLocation();
+  const { signOut, user, role } = useAuth();
+
+  const handleNavigate = (path: string) => {
+    navigate(path);
+    onClose();
+  };
+
+  const handleSignOut = async () => {
+    await signOut();
+    navigate('/auth');
+  };
+
+  const isActive = (path: string) => {
+    if (path === '/') return location.pathname === '/';
+    return location.pathname.startsWith(path);
+  };
+
+  return (
+    <>
+      {/* Backdrop for mobile */}
+      {isOpen && (
+        <div
+          className="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm md:hidden"
+          onClick={onClose}
+        />
+      )}
+
+      {/* Sidebar */}
+      <aside
+        className={`
+          fixed top-0 left-0 z-50 h-full w-64 bg-card border-r border-border
+          transform transition-transform duration-200 ease-in-out
+          ${isOpen ? 'translate-x-0' : '-translate-x-full'}
+          md:translate-x-0
+        `}
+      >
+        <div className="flex flex-col h-full">
+          {/* Header */}
+          <div className="flex items-center justify-between p-4 border-b border-border">
+            <div className="flex items-center gap-3">
+              <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center">
+                <span className="text-primary-foreground font-bold text-sm">B</span>
+              </div>
+              <div>
+                <h1 className="font-bold text-foreground text-sm">Bethel Platform</h1>
+                <p className="text-[10px] text-muted-foreground">Sistema de Gestão</p>
+              </div>
+            </div>
+            <button
+              onClick={onClose}
+              className="md:hidden p-1 rounded hover:bg-accent"
+            >
+              <X className="h-5 w-5 text-muted-foreground" />
+            </button>
+          </div>
+
+          {/* Services Navigation */}
+          <nav className="flex-1 p-3 space-y-1 overflow-y-auto">
+            <p className="px-3 py-2 text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">
+              Serviços
+            </p>
+            {services.map((service) => {
+              const Icon = service.icon;
+              const active = isActive(service.path);
+              return (
+                <button
+                  key={service.id}
+                  onClick={() => handleNavigate(service.path)}
+                  className={`
+                    w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm
+                    transition-colors group
+                    ${active
+                      ? 'bg-primary text-primary-foreground'
+                      : 'text-muted-foreground hover:bg-accent hover:text-foreground'
+                    }
+                  `}
+                >
+                  <Icon className="h-4 w-4 shrink-0" />
+                  <div className="flex-1 text-left">
+                    <span className="font-medium">{service.label}</span>
+                  </div>
+                  <ChevronRight
+                    className={`h-3 w-3 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity
+                      ${active ? 'opacity-100' : ''}
+                    `}
+                  />
+                </button>
+              );
+            })}
+          </nav>
+
+          {/* User section */}
+          <div className="p-3 border-t border-border">
+            <div className="flex items-center gap-3 px-3 py-2 mb-2">
+              <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center">
+                <span className="text-primary text-xs font-semibold">
+                  {user?.email?.charAt(0).toUpperCase() ?? 'U'}
+                </span>
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-xs font-medium text-foreground truncate">
+                  {user?.email ?? 'Usuário'}
+                </p>
+                <p className="text-[10px] text-muted-foreground capitalize">
+                  {role ?? 'Carregando...'}
+                </p>
+              </div>
+            </div>
+            <button
+              onClick={handleSignOut}
+              className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm
+                text-muted-foreground hover:bg-destructive/10 hover:text-destructive transition-colors"
+            >
+              <LogOut className="h-4 w-4" />
+              <span>Sair</span>
+            </button>
+          </div>
+        </div>
+      </aside>
+    </>
+  );
+}

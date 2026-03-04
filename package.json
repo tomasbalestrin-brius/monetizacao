@@ -1,0 +1,25 @@
+{
+  "name": "bethel-platform",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Bethel Platform - Sistema Mãe com microserviços",
+  "type": "module",
+  "workspaces": [
+    "apps/*",
+    "packages/*",
+    "services/*"
+  ],
+  "scripts": {
+    "dev": "npm run dev --workspace=apps/main",
+    "dev:monetizacao": "npm run dev --workspace=services/monetizacao",
+    "build": "npm run build --workspace=apps/main",
+    "build:monetizacao": "npm run build --workspace=services/monetizacao",
+    "build:all": "npm run build --workspaces --if-present",
+    "lint": "npm run lint --workspaces --if-present",
+    "test": "npm run test --workspaces --if-present",
+    "preview": "npm run preview --workspace=apps/main"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

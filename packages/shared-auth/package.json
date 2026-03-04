@@ -1,0 +1,15 @@
+{
+  "name": "@bethel/shared-auth",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "main": "src/index.ts",
+  "types": "src/index.ts",
+  "peerDependencies": {
+    "react": "^18.3.1"
+  },
+  "dependencies": {
+    "@bethel/shared-supabase": "*",
+    "@supabase/supabase-js": "^2.91.0"
+  }
+}
