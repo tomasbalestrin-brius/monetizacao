@@ -1,90 +1,93 @@
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700;800&family=Inter:wght@300;400;500;600;700&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-/* Design System - Bethel Platform Theme
-   All colors MUST be HSL.
+/* Design System - Bethel Platform Identity
+   Primary (Navy):      hsl(224, 76%, 4%)
+   Accent (Royal Blue): hsl(240, 98%, 16%)
 */
 
 @layer base {
   :root {
     --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
+    --foreground: 224 76% 4%;
 
     --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
+    --card-foreground: 224 76% 4%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
+    --popover-foreground: 224 76% 4%;
 
-    --primary: 222.2 47.4% 11.2%;
-    --primary-foreground: 210 40% 98%;
+    --primary: 224 76% 4%;
+    --primary-foreground: 0 0% 100%;
 
-    --secondary: 210 40% 96.1%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
+    --secondary: 224 20% 94%;
+    --secondary-foreground: 224 76% 4%;
 
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
+    --muted: 224 20% 94%;
+    --muted-foreground: 224 20% 40%;
 
-    --accent: 210 40% 96.1%;
-    --accent-foreground: 222.2 47.4% 11.2%;
+    --accent: 240 98% 16%;
+    --accent-foreground: 0 0% 100%;
 
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
 
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 222.2 84% 4.9%;
+    --border: 224 20% 90%;
+    --input: 224 20% 90%;
+    --ring: 240 98% 16%;
 
     --radius: 0.75rem;
 
-    --sidebar-background: 0 0% 98%;
-    --sidebar-foreground: 240 5.3% 26.1%;
-    --sidebar-primary: 240 5.9% 10%;
-    --sidebar-primary-foreground: 0 0% 98%;
-    --sidebar-accent: 240 4.8% 95.9%;
-    --sidebar-accent-foreground: 240 5.9% 10%;
-    --sidebar-border: 220 13% 91%;
-    --sidebar-ring: 217.2 91.2% 59.8%;
+    --sidebar-background: 224 76% 4%;
+    --sidebar-foreground: 224 20% 90%;
+    --sidebar-primary: 240 98% 16%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 224 76% 8%;
+    --sidebar-accent-foreground: 224 20% 90%;
+    --sidebar-border: 224 76% 10%;
+    --sidebar-ring: 240 98% 16%;
   }
 
   .dark {
-    --background: 224 71% 4%;
-    --foreground: 213 31% 91%;
+    --background: 224 76% 4%;
+    --foreground: 224 20% 90%;
 
-    --card: 224 71% 6%;
-    --card-foreground: 213 31% 91%;
+    --card: 224 76% 6%;
+    --card-foreground: 224 20% 90%;
 
-    --popover: 224 71% 6%;
-    --popover-foreground: 213 31% 91%;
+    --popover: 224 76% 6%;
+    --popover-foreground: 224 20% 90%;
 
-    --primary: 217 91% 60%;
+    --primary: 240 98% 25%;
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 222 47% 11%;
-    --secondary-foreground: 213 31% 91%;
+    --secondary: 224 76% 8%;
+    --secondary-foreground: 224 20% 90%;
 
-    --muted: 223 47% 11%;
-    --muted-foreground: 215 20% 65%;
+    --muted: 224 76% 8%;
+    --muted-foreground: 224 20% 60%;
 
-    --accent: 222 47% 14%;
-    --accent-foreground: 213 31% 91%;
+    --accent: 240 98% 25%;
+    --accent-foreground: 0 0% 100%;
 
     --destructive: 0 63% 31%;
-    --destructive-foreground: 210 40% 98%;
+    --destructive-foreground: 0 0% 100%;
 
-    --border: 223 47% 14%;
-    --input: 223 47% 14%;
-    --ring: 217 91% 60%;
+    --border: 224 76% 10%;
+    --input: 224 76% 10%;
+    --ring: 240 98% 25%;
 
-    --sidebar-background: 224 71% 6%;
-    --sidebar-foreground: 213 31% 91%;
-    --sidebar-primary: 217 91% 60%;
+    --sidebar-background: 224 76% 3%;
+    --sidebar-foreground: 224 20% 85%;
+    --sidebar-primary: 240 98% 25%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 223 47% 11%;
-    --sidebar-accent-foreground: 213 31% 91%;
-    --sidebar-border: 223 47% 14%;
-    --sidebar-ring: 217 91% 60%;
+    --sidebar-accent: 224 76% 8%;
+    --sidebar-accent-foreground: 224 20% 85%;
+    --sidebar-border: 224 76% 10%;
+    --sidebar-ring: 240 98% 25%;
   }
 }
 
@@ -95,9 +98,15 @@
 
   body {
     @apply bg-background text-foreground antialiased;
+    font-family: 'Inter', system-ui, sans-serif;
+    font-feature-settings: "rlig" 1, "calt" 1;
     padding-top: env(safe-area-inset-top);
     padding-left: env(safe-area-inset-left);
     padding-right: env(safe-area-inset-right);
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
   }
 
   html {
@@ -107,6 +116,12 @@
 
 .safe-area-bottom {
   padding-bottom: env(safe-area-inset-bottom);
+}
+
+@layer utilities {
+  .font-display {
+    font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
