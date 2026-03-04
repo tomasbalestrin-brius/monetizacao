@@ -5,6 +5,7 @@ import { TooltipProvider } from "@radix-ui/react-tooltip";
 import { Toaster } from "sonner";
 import { createSupabaseClient } from "@bethel/shared-supabase";
 import { AuthProvider } from "@bethel/shared-auth";
+import { ThemeProvider } from "@bethel/shared-theme";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { PlatformLayout } from "@/layouts/PlatformLayout";
 import { AuthPage } from "@/pages/AuthPage";
@@ -45,11 +46,12 @@ const SDRModule = React.lazy(
 );
 
 const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
-      <AuthProvider>
-        <Toaster richColors position="top-right" />
-        <BrowserRouter>
+  <ThemeProvider>
+    <QueryClientProvider client={queryClient}>
+      <TooltipProvider>
+        <AuthProvider>
+          <Toaster richColors position="top-right" />
+          <BrowserRouter>
           <Routes>
             {/* Public routes */}
             <Route path="/auth" element={<AuthPage />} />
@@ -105,10 +107,11 @@ const App = () => (
             {/* Catch-all */}
             <Route path="*" element={<NotFoundPage />} />
           </Routes>
-        </BrowserRouter>
-      </AuthProvider>
-    </TooltipProvider>
-  </QueryClientProvider>
+          </BrowserRouter>
+        </AuthProvider>
+      </TooltipProvider>
+    </QueryClientProvider>
+  </ThemeProvider>
 );
 
 export default App;

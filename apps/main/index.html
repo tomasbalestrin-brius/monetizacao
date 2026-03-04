@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="pt-BR" class="dark">
+<html lang="pt-BR">
   <head>
     <meta charset="UTF-8" />
     <link rel="icon" type="image/x-icon" href="/favicon.ico" />
@@ -12,6 +12,10 @@
     <meta name="description" content="Bethel - Plataforma de Gestão Integrada" />
   </head>
   <body>
+    <script>
+      // Prevent flash: apply saved theme before React loads
+      (function(){var t=localStorage.getItem('bethel-theme');if(!t){t=window.matchMedia('(prefers-color-scheme:light)').matches?'light':'dark'}if(t==='dark')document.documentElement.classList.add('dark')})();
+    </script>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>

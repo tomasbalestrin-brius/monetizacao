@@ -13,9 +13,12 @@ import {
   Calendar,
   Clock,
   Home,
+  Sun,
+  Moon,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/contexts/AuthContext';
+import { useTheme } from '@bethel/shared-theme';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 
@@ -59,6 +62,7 @@ interface SidebarProps {
 
 export function Sidebar({ isOpen, onClose, activeModule, onModuleChange }: SidebarProps) {
   const { signOut, hasPermission, isAdmin, isManager, isCloser, isLider, isAdminOrLider } = useAuth();
+  const { theme, toggleTheme } = useTheme();
 
   const handleLogout = async () => {
     await signOut();
@@ -206,8 +210,18 @@ export function Sidebar({ isOpen, onClose, activeModule, onModuleChange }: Sideb
             )}
           </nav>
 
-          {/* Logout */}
+          {/* Theme toggle & Logout */}
           <Separator className="bg-sidebar-border my-4" />
+          <button
+            onClick={toggleTheme}
+            className={cn(
+              'w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors',
+              'text-sidebar-foreground hover:bg-sidebar-accent'
+            )}
+          >
+            {theme === 'dark' ? <Sun size={20} /> : <Moon size={20} />}
+            <span className="font-medium">{theme === 'dark' ? 'Modo Claro' : 'Modo Escuro'}</span>
+          </button>
           <Button
             variant="ghost"
             onClick={handleLogout}

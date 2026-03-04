@@ -1,6 +1,7 @@
 import React from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@bethel/shared-auth';
+import { useTheme } from '@bethel/shared-theme';
 import {
   LayoutDashboard,
   TrendingUp,
@@ -8,6 +9,8 @@ import {
   LogOut,
   X,
   ChevronRight,
+  Sun,
+  Moon,
 } from 'lucide-react';
 
 interface ServiceItem {
@@ -62,6 +65,7 @@ export function PlatformSidebar({ isOpen, onClose }: PlatformSidebarProps) {
   const navigate = useNavigate();
   const location = useLocation();
   const { signOut, user, role } = useAuth();
+  const { theme, toggleTheme } = useTheme();
 
   const handleNavigate = (path: string) => {
     navigate(path);
@@ -173,6 +177,14 @@ export function PlatformSidebar({ isOpen, onClose }: PlatformSidebarProps) {
                 </p>
               </div>
             </div>
+            <button
+              onClick={toggleTheme}
+              className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm
+                text-muted-foreground hover:bg-accent hover:text-foreground transition-colors"
+            >
+              {theme === 'dark' ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+              <span>{theme === 'dark' ? 'Modo Claro' : 'Modo Escuro'}</span>
+            </button>
             <button
               onClick={handleSignOut}
               className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm
