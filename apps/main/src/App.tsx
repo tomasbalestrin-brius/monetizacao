@@ -5,10 +5,12 @@ import { TooltipProvider } from "@radix-ui/react-tooltip";
 import { Toaster } from "sonner";
 import { createSupabaseClient } from "@bethel/shared-supabase";
 import { AuthProvider } from "@bethel/shared-auth";
+import { ThemeProvider } from "@bethel/shared-theme";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { PlatformLayout } from "@/layouts/PlatformLayout";
 import { AuthPage } from "@/pages/AuthPage";
 import { HomePage } from "@/pages/HomePage";
+import { MasterAdminPage } from "@/pages/MasterAdminPage";
 import { NotFoundPage } from "@/pages/NotFoundPage";
 
 // Initialize Supabase client (singleton - must happen before any auth/data usage)
@@ -45,11 +47,12 @@ const SDRModule = React.lazy(
 );
 
 const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
-      <AuthProvider>
-        <Toaster richColors position="top-right" />
-        <BrowserRouter>
+  <ThemeProvider>
+    <QueryClientProvider client={queryClient}>
+      <TooltipProvider>
+        <AuthProvider>
+          <Toaster richColors position="top-right" />
+          <BrowserRouter>
           <Routes>
             {/* Public routes */}
             <Route path="/auth" element={<AuthPage />} />
@@ -64,6 +67,7 @@ const App = () => (
               }
             >
               <Route index element={<HomePage />} />
+              <Route path="admin" element={<MasterAdminPage />} />
             </Route>
 
             {/* Monetização Microservice - own layout, no platform shell */}
@@ -105,10 +109,11 @@ const App = () => (
             {/* Catch-all */}
             <Route path="*" element={<NotFoundPage />} />
           </Routes>
-        </BrowserRouter>
-      </AuthProvider>
-    </TooltipProvider>
-  </QueryClientProvider>
+          </BrowserRouter>
+        </AuthProvider>
+      </TooltipProvider>
+    </QueryClientProvider>
+  </ThemeProvider>
 );
 
 export default App;

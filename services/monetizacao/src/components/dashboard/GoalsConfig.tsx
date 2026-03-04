@@ -8,62 +8,36 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { MonthSelector } from '@/components/dashboard/MonthSelector';
 import { useClosers } from '@/hooks/useMetrics';
-import { useSDRs } from '@/hooks/useSdrMetrics';
-import { useAllGoals, useUpsertGoal, CLOSER_METRIC_KEYS, SDR_METRIC_KEYS } from '@/hooks/useGoals';
+import { useAllGoals, useUpsertGoal, CLOSER_METRIC_KEYS } from '@/hooks/useGoals';
 import { useAuth } from '@/contexts/AuthContext';
 
 export function GoalsConfig() {
   const { isAdmin, isManager, permissions } = useAuth();
-  const [entityType, setEntityType] = useState<'closer' | 'sdr'>('closer');
+  const entityType = 'closer' as const;
   const [selectedEntityId, setSelectedEntityId] = useState<string>('');
   const [selectedMonth, setSelectedMonth] = useState<Date>(startOfMonth(new Date()));
   const [values, setValues] = useState<Record<string, string>>({});
   const [saving, setSaving] = useState(false);
 
   const { data: closers } = useClosers();
-  const { data: sdrs } = useSDRs();
   const upsertGoal = useUpsertGoal();
 
   const monthStr = format(selectedMonth, 'yyyy-MM-dd');
   const { data: existingGoals, isLoading } = useAllGoals(monthStr);
 
-  // For managers, filter entities by their module permissions
-  // Squad slugs (eagles, sharks) map to closer squads; 'sdrs' maps to SDR entities
+  // For managers, filter closers by their squad permissions
   const managerSquadSlugs = useMemo(() => {
-    if (isAdmin) return null; // admin sees all
+    if (isAdmin) return null;
     return permissions.filter(p => ['eagles', 'sharks'].includes(p));
   }, [isAdmin, permissions]);
 
-  const canAccessSDRs = isAdmin || permissions.includes('sdrs');
-  const canAccessClosers = isAdmin || (managerSquadSlugs && managerSquadSlugs.length > 0);
-
-  // Available entity types for this user
-  const availableTypes = useMemo(() => {
-    const types: Array<{ value: 'closer' | 'sdr'; label: string }> = [];
-    if (canAccessClosers) types.push({ value: 'closer', label: 'Closer' });
-    if (canAccessSDRs) types.push({ value: 'sdr', label: 'SDR / Social' });
-    return types;
-  }, [canAccessClosers, canAccessSDRs]);
-
-  // Auto-select first available type
-  React.useEffect(() => {
-    if (availableTypes.length > 0 && !availableTypes.find(t => t.value === entityType)) {
-      setEntityType(availableTypes[0].value);
-      setSelectedEntityId('');
-    }
-  }, [availableTypes]);
-
   const entities = useMemo(() => {
-    if (entityType === 'closer') {
-      const allClosers = (closers || []).map(c => ({ id: c.id, name: c.name, extra: c.squad?.name, squadSlug: c.squad?.slug }));
-      if (isAdmin) return allClosers;
-      // Filter by manager's squad permissions
-      return allClosers.filter(c => managerSquadSlugs?.includes(c.squadSlug || ''));
-    }
-    return (sdrs || []).map(s => ({ id: s.id, name: s.name, extra: s.type === 'sdr' ? 'SDR' : 'Social', squadSlug: undefined }));
-  }, [entityType, closers, sdrs, isAdmin, managerSquadSlugs]);
+    const allClosers = (closers || []).map(c => ({ id: c.id, name: c.name, extra: c.squad?.name, squadSlug: c.squad?.slug }));
+    if (isAdmin) return allClosers;
+    return allClosers.filter(c => managerSquadSlugs?.includes(c.squadSlug || ''));
+  }, [closers, isAdmin, managerSquadSlugs]);
 
-  const metricKeys = entityType === 'closer' ? CLOSER_METRIC_KEYS : SDR_METRIC_KEYS;
+  const metricKeys = CLOSER_METRIC_KEYS;
 
   // Load existing goals when entity changes
   const entityGoals = useMemo(() => {
@@ -120,27 +94,16 @@ export function GoalsConfig() {
             <Target className="h-5 w-5 text-primary" />
           </div>
           <div>
-            <h2 className="text-xl font-semibold text-foreground">Configurar Metas Mensais</h2>
-            <p className="text-sm text-muted-foreground">Defina metas para closers e SDRs</p>
+            <h2 className="text-xl font-semibold text-foreground">Metas dos Closers</h2>
+            <p className="text-sm text-muted-foreground">Defina metas mensais para os closers</p>
           </div>
         </div>
 
         {/* Filters */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
-          <Select value={entityType} onValueChange={(v) => { setEntityType(v as 'closer' | 'sdr'); setSelectedEntityId(''); }}>
-            <SelectTrigger>
-              <SelectValue placeholder="Tipo" />
-            </SelectTrigger>
-            <SelectContent>
-              {availableTypes.map(t => (
-                <SelectItem key={t.value} value={t.value}>{t.label}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
           <Select value={selectedEntityId} onValueChange={setSelectedEntityId}>
             <SelectTrigger>
-              <SelectValue placeholder="Selecione..." />
+              <SelectValue placeholder="Selecione um closer..." />
             </SelectTrigger>
             <SelectContent>
               {entities.map(e => (

@@ -55,6 +55,95 @@ export interface FunnelDailyData {
   created_by: string | null;
 }
 
+// Fetch all funnels (including inactive for admin)
+export function useAllFunnels() {
+  return useQuery({
+    queryKey: ['all-funnels'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('funnels')
+        .select('*')
+        .order('name');
+      if (error) throw error;
+      return data as Funnel[];
+    },
+  });
+}
+
+// Create funnel
+export function useCreateFunnel() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (funnel: { name: string; category?: string; expert_name?: string; import_type?: string }) => {
+      const { data, error } = await supabase
+        .from('funnels')
+        .insert({ ...funnel, is_active: true })
+        .select()
+        .single();
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['funnels'] });
+      queryClient.invalidateQueries({ queryKey: ['all-funnels'] });
+      toast.success('Funil criado com sucesso!');
+    },
+    onError: () => {
+      toast.error('Erro ao criar funil');
+    },
+  });
+}
+
+// Update funnel
+export function useUpdateFunnel() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ id, ...updates }: { id: string; name?: string; category?: string; is_active?: boolean; expert_name?: string; import_type?: string }) => {
+      const { data, error } = await supabase
+        .from('funnels')
+        .update(updates)
+        .eq('id', id)
+        .select()
+        .single();
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['funnels'] });
+      queryClient.invalidateQueries({ queryKey: ['all-funnels'] });
+      toast.success('Funil atualizado!');
+    },
+    onError: () => {
+      toast.error('Erro ao atualizar funil');
+    },
+  });
+}
+
+// Delete funnel
+export function useDeleteFunnel() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase
+        .from('funnels')
+        .update({ is_active: false })
+        .eq('id', id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['funnels'] });
+      queryClient.invalidateQueries({ queryKey: ['all-funnels'] });
+      toast.success('Funil desativado!');
+    },
+    onError: () => {
+      toast.error('Erro ao desativar funil');
+    },
+  });
+}
+
 // Fetch all active funnels
 export function useFunnels() {
   return useQuery({

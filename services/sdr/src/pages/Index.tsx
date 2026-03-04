@@ -11,6 +11,7 @@ import { Loader2 } from 'lucide-react';
 const SDRDashboardOverview = lazy(() => import('@/components/dashboard/SDRDashboardOverview').then(m => ({ default: m.SDRDashboardOverview })));
 const SDRDashboard = lazy(() => import('@/components/dashboard/sdr').then(m => ({ default: m.SDRDashboard })));
 const CrmKanbanPage = lazy(() => import('@/components/dashboard/crm/CrmKanbanPage').then(m => ({ default: m.CrmKanbanPage })));
+const LeadsImportPage = lazy(() => import('@/components/dashboard/LeadsImportPage').then(m => ({ default: m.LeadsImportPage })));
 const SDRReportsPage = lazy(() => import('@/components/dashboard/SDRReportsPage').then(m => ({ default: m.SDRReportsPage })));
 const SDRQualificationPage = lazy(() => import('@/components/dashboard/SDRQualificationPage').then(m => ({ default: m.SDRQualificationPage })));
 const SDRGoalsPage = lazy(() => import('@/components/dashboard/SDRGoalsPage').then(m => ({ default: m.SDRGoalsPage })));
@@ -56,7 +57,7 @@ const Index = () => {
       case 'lead-management':
         return <CrmKanbanPage />;
       case 'leads':
-        return <SDRDashboard />;
+        return <LeadsImportPage />;
       case 'reports':
         return <SDRReportsPage />;
       case 'qualification':

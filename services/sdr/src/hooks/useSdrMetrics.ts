@@ -432,6 +432,77 @@ export function useUpdateSDRMetric() {
   });
 }
 
+// Create SDR
+export function useCreateSDR() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (sdr: { name: string; type: 'sdr' | 'social_selling' }) => {
+      const { data, error } = await supabase
+        .from('sdrs')
+        .insert(sdr)
+        .select()
+        .single();
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['sdrs'] });
+      toast.success('SDR criado com sucesso!');
+    },
+    onError: () => {
+      toast.error('Erro ao criar SDR');
+    },
+  });
+}
+
+// Update SDR
+export function useUpdateSDR() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ id, ...updates }: { id: string; name?: string; type?: 'sdr' | 'social_selling' }) => {
+      const { data, error } = await supabase
+        .from('sdrs')
+        .update(updates)
+        .eq('id', id)
+        .select()
+        .single();
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['sdrs'] });
+      toast.success('SDR atualizado!');
+    },
+    onError: () => {
+      toast.error('Erro ao atualizar SDR');
+    },
+  });
+}
+
+// Delete SDR
+export function useDeleteSDR() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase
+        .from('sdrs')
+        .delete()
+        .eq('id', id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['sdrs'] });
+      toast.success('SDR removido!');
+    },
+    onError: () => {
+      toast.error('Erro ao remover SDR');
+    },
+  });
+}
+
 // Delete SDR metric
 export function useDeleteSDRMetric() {
   const queryClient = useQueryClient();

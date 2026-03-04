@@ -16,6 +16,7 @@
   },
   "dependencies": {
     "@bethel/shared-auth": "*",
+    "@bethel/shared-theme": "*",
     "@bethel/shared-supabase": "*",
     "@bethel/shared-ui": "*",
     "@hookform/resolvers": "^3.10.0",
