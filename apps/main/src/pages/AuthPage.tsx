@@ -123,21 +123,25 @@ export function AuthPage() {
 
         <div className="relative z-10 flex flex-col justify-between h-full px-16 xl:px-24 py-16">
           <div>
-            <div className="mb-10">
-              <img src="/logo.png" alt="Bethel" className="w-20 h-20 object-contain mb-6" />
-              <h1 className="text-4xl xl:text-5xl font-bold text-white leading-tight">
-                Bethel
-                <br />
-                <span className="text-blue-400">Comercial</span>
+            {/* Logo + Nome lado a lado */}
+            <div className="flex items-center gap-4 mb-10">
+              <img src="/logo.png" alt="Bethel" className="w-12 h-12 object-contain" />
+              <h1 className="text-2xl xl:text-3xl font-bold text-white">
+                Bethel <span className="text-white">Comercial</span>
               </h1>
             </div>
 
-            <p className="text-lg text-slate-300 mb-10 max-w-md leading-relaxed">
-              A plataforma completa para gestão de vendas, SDR e monetização do seu negócio.
+            {/* Frase principal */}
+            <h2 className="text-3xl xl:text-4xl font-bold text-white leading-tight mb-4 max-w-lg">
+              Profissionalizando o empreendedorismo através da Educação e Tecnologia.
+            </h2>
+
+            <p className="text-lg text-slate-400 mb-10 max-w-md leading-relaxed">
+              Transformando cada empresa em Casa de Deus.
             </p>
 
             <div className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl p-6 max-w-md">
-              <p className="text-xs text-slate-500 uppercase tracking-wider mb-3">Nossos valores</p>
+              <p className="text-xs text-slate-500 uppercase tracking-wider mb-3">Valor do dia</p>
               <p className="text-lg font-semibold text-white min-h-[56px] leading-relaxed italic">
                 "<RotatingText />"
               </p>
@@ -155,12 +159,15 @@ export function AuthPage() {
         <div className="w-full max-w-md">
           {/* Mobile logo */}
           <div className="lg:hidden text-center mb-8">
-            <img src="/logo.png" alt="Bethel" className="w-14 h-14 object-contain mx-auto mb-4" />
-            <h1 className="text-3xl font-bold text-white">
-              Bethel <span className="text-blue-400">Comercial</span>
-            </h1>
-            <p className="text-slate-400 mt-2 text-sm italic">
-              "<RotatingText />"
+            <div className="flex items-center justify-center gap-3 mb-4">
+              <img src="/logo.png" alt="Bethel" className="w-10 h-10 object-contain" />
+              <h1 className="text-2xl font-bold text-white">Bethel Comercial</h1>
+            </div>
+            <p className="text-sm font-semibold text-white leading-snug mb-1">
+              Profissionalizando o empreendedorismo através da Educação e Tecnologia.
+            </p>
+            <p className="text-xs text-slate-400">
+              Transformando cada empresa em Casa de Deus.
             </p>
           </div>
 
