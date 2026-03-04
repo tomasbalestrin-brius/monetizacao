@@ -1,4 +1,3 @@
-import React from 'react';
 import { LayoutDashboard, Calendar, FileText, Clock, Home } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/contexts/AuthContext';

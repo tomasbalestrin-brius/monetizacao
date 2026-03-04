@@ -1,4 +1,3 @@
-import React from 'react';
 import { LucideIcon, TrendingUp } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import {

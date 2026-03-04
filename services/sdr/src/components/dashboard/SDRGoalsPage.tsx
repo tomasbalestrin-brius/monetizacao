@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { format, startOfMonth } from 'date-fns';
 import { useSDRs } from '@/hooks/useSdrMetrics';
 import { useAllGoals, useUpsertGoal, SDR_METRIC_KEYS, getGoalTarget } from '@/hooks/useGoals';
@@ -9,7 +9,7 @@ import { Target, Save, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 
 export function SDRGoalsPage() {
-  const { isAdmin, isAdminOrLider } = useAuth();
+  const { isAdminOrLider } = useAuth();
   const { data: sdrs, isLoading: loadingSDRs } = useSDRs();
   const [selectedMonth, setSelectedMonth] = useState<Date>(startOfMonth(new Date()));
   const [selectedSdrId, setSelectedSdrId] = useState<string>('');

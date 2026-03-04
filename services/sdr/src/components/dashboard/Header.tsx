@@ -1,4 +1,4 @@
-import React from 'react';
+
 import { Menu, User, ArrowLeft } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';

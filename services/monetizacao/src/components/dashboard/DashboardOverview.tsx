@@ -1,35 +1,20 @@
-import React, { useState, useMemo } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useState, useMemo } from 'react';
 import { Phone, Target, TrendingUp, DollarSign } from 'lucide-react';
 import { MetricCard } from './MetricCard';
 import { SquadSection, SquadSectionLoading } from './SquadSection';
-import { EmptyState } from './EmptyState';
 import { MonthSelector, getMonthPeriod } from './MonthSelector';
 import { useTotalMetrics } from '@/hooks/useMetrics';
-import { useAuth } from '@/contexts/AuthContext';
-import { toast } from 'sonner';
 import { useRealtimeMetrics } from '@/hooks/useRealtimeMetrics';
 
 export function DashboardOverview() {
   // Enable realtime subscriptions for automatic updates
   useRealtimeMetrics();
-  
-  const navigate = useNavigate();
-  const { isAdmin } = useAuth();
+
   const [selectedMonth, setSelectedMonth] = useState(() => new Date());
   
   const { periodStart, periodEnd } = useMemo(() => getMonthPeriod(selectedMonth), [selectedMonth]);
   const { totals, squadMetrics, isLoading, error } = useTotalMetrics(periodStart, periodEnd);
 
-  const handleConnectSheet = () => {
-    if (isAdmin) {
-      // Navigate to admin panel where Google Sheets config will be
-      navigate('/?module=admin');
-      toast.info('Configure o Google Sheets no Painel Administrativo');
-    } else {
-      toast.error('Apenas administradores podem configurar a integração com Google Sheets');
-    }
-  };
 
   if (error) {
     return (

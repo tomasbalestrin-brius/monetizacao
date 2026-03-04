@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import { useMemo } from 'react';
 import {
   BarChart,
   Bar,
@@ -141,27 +141,6 @@ const renderCustomLabel = (props: any) => {
       fontWeight={600}
     >
       {value}
-    </text>
-  );
-};
-
-// Custom label renderer for currency values
-const renderCurrencyLabel = (props: any) => {
-  const { x, y, width, value } = props;
-  if (!value || value === 0) return null;
-  
-  const formatted = (value / 1000).toFixed(0) + 'k';
-  
-  return (
-    <text 
-      x={x + width / 2} 
-      y={y - 6} 
-      fill="hsl(var(--foreground))" 
-      textAnchor="middle" 
-      fontSize={10}
-      fontWeight={600}
-    >
-      {formatted}
     </text>
   );
 };

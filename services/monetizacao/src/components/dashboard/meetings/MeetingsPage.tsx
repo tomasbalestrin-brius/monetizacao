@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { useMeetings, Meeting } from '@/hooks/useMeetings';
 import { CreateMeetingDialog } from './CreateMeetingDialog';
 import { MeetingDetailPage } from './MeetingDetailPage';

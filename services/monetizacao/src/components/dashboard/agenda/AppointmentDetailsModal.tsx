@@ -1,7 +1,6 @@
-import React from 'react';
 import {
   X, Phone, Mail, AtSign, Tag, User, Calendar, Clock,
-  DollarSign, AlertTriangle, CheckCircle, RotateCcw, Ban,
+  DollarSign, CheckCircle, RotateCcw, Ban,
 } from 'lucide-react';
 import { useCancelAppointment } from '@/hooks/useAppointments';
 import { useAuth } from '@/contexts/AuthContext';
@@ -23,7 +22,7 @@ const statusConfig: Record<string, { label: string; color: string }> = {
 };
 
 export function AppointmentDetailsModal({ appointment, onClose, onRegisterResult }: AppointmentDetailsModalProps) {
-  const { isCloser, isAdminOrLider } = useAuth();
+  const { isCloser } = useAuth();
   const cancelMutation = useCancelAppointment();
   const lead = appointment.lead;
   const status = statusConfig[appointment.status] ?? statusConfig.agendado;

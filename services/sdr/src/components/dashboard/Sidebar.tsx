@@ -51,7 +51,7 @@ interface SidebarProps {
 }
 
 export function Sidebar({ isOpen, onClose, activeModule, onModuleChange }: SidebarProps) {
-  const { signOut, hasPermission, isAdmin, isLider, isSDR } = useAuth();
+  const { signOut, hasPermission, isAdmin, isLider } = useAuth();
   const { theme, toggleTheme } = useTheme();
 
   const handleLogout = async () => {

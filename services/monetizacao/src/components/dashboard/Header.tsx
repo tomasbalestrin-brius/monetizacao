@@ -1,4 +1,3 @@
-import React, { useState } from 'react';
 import { Menu, User, ArrowLeft } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
@@ -19,7 +18,7 @@ interface HeaderProps {
 }
 
 export function Header({ onMenuClick }: HeaderProps) {
-  const { user, role, signOut, isAdmin, isManager } = useAuth();
+  const { user, role, signOut } = useAuth();
 
   const getRoleLabel = (role: string | null) => {
     switch (role) {

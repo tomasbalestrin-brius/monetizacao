@@ -1,7 +1,7 @@
-import React, { useState, useMemo } from 'react';
+import { useState, useMemo } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useSDRsWithMetrics } from '@/hooks/useSdrMetrics';
-import { useFunnels, useAllFunnelsSummary } from '@/hooks/useFunnels';
+import { useAllFunnelsSummary } from '@/hooks/useFunnels';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { FileText, TrendingUp, Users, BarChart3, GitBranch, Lightbulb, ArrowRight } from 'lucide-react';
@@ -30,8 +30,7 @@ export function SDRReportsPage() {
 
   const { start, end } = getDateRange();
   const { data: sdrsWithMetrics, isLoading: loadingSDRs } = useSDRsWithMetrics(undefined, start, end);
-  const { data: funnelsSummary, isLoading: loadingFunnels } = useAllFunnelsSummary(start, end);
-  const { data: funnels } = useFunnels();
+  const { data: funnelsSummary } = useAllFunnelsSummary(start, end);
 
   const totals = useMemo(() => {
     if (!sdrsWithMetrics) return { activated: 0, scheduled: 0, attended: 0, sales: 0 };

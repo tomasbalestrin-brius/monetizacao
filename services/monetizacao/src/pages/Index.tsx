@@ -1,4 +1,4 @@
-import React, { useState, useEffect, lazy, Suspense } from 'react';
+import { useState, useEffect, lazy, Suspense } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { Sidebar, ModuleId } from '@/components/dashboard/Sidebar';
@@ -11,7 +11,6 @@ import { Loader2 } from 'lucide-react';
 const DashboardOverview = lazy(() => import('@/components/dashboard/DashboardOverview').then(m => ({ default: m.DashboardOverview })));
 const SquadPage = lazy(() => import('@/components/dashboard/SquadPage').then(m => ({ default: m.SquadPage })));
 const AdminPanel = lazy(() => import('@/components/dashboard/AdminPanel').then(m => ({ default: m.AdminPanel })));
-const UserDashboard = lazy(() => import('@/components/dashboard/UserDashboard').then(m => ({ default: m.UserDashboard })));
 const GoalsConfig = lazy(() => import('@/components/dashboard/GoalsConfig').then(m => ({ default: m.GoalsConfig })));
 const MeetingsPage = lazy(() => import('@/components/dashboard/meetings').then(m => ({ default: m.MeetingsPage })));
 const ReportsPage = lazy(() => import('@/components/dashboard/reports').then(m => ({ default: m.ReportsPage })));
@@ -28,7 +27,7 @@ function PageLoader() {
 
 const Index = () => {
   const [searchParams] = useSearchParams();
-  const { user, loading, isUser, isCloser } = useAuth();
+  const { loading, isCloser } = useAuth();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   // Closers default to 'agenda', everyone else to 'dashboard'
   const [activeModule, setActiveModule] = useState<ModuleId>(isCloser ? 'agenda' : 'dashboard');

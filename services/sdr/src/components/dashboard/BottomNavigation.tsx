@@ -1,4 +1,4 @@
-import React from 'react';
+
 import { LayoutDashboard, Users, UserCheck, FileText, Home } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { ModuleId } from './Sidebar';

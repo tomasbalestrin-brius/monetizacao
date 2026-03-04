@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import { useState, useMemo } from 'react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { CalendarIcon, Plus, Loader2 } from 'lucide-react';
@@ -26,7 +26,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { cn } from '@/lib/utils';
-import { useUserFunnels, useCreateFunnelDailyData, type Funnel } from '@/hooks/useFunnels';
+import { useUserFunnels, useCreateFunnelDailyData } from '@/hooks/useFunnels';
 import { useSDRs } from '@/hooks/useSdrMetrics';
 
 interface CloserFunnelFormProps {

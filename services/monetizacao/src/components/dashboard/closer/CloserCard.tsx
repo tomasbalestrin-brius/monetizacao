@@ -1,6 +1,5 @@
-import React from 'react';
 import { cn } from '@/lib/utils';
-import { Phone, ChevronRight, TrendingUp } from 'lucide-react';
+import { ChevronRight, TrendingUp } from 'lucide-react';
 import { Progress } from '@/components/ui/progress';
 
 interface CloserWithMetrics {

@@ -1,10 +1,9 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { Loader2, Plus, Trash2, Tag, Check, X } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
-import { Badge } from '@/components/ui/badge';
 import { useNiches, useCreateNiche, useUpdateNiche, useDeleteNiche } from '@/hooks/useNiches';
 
 export function NichesManager() {

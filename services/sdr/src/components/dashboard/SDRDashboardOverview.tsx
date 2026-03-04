@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import { useState, useMemo } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useSDRsWithMetrics } from '@/hooks/useSdrMetrics';
 import { useFunnels } from '@/hooks/useFunnels';
@@ -8,7 +8,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import {
   Users,
   UserCheck,
-  Phone,
   TrendingUp,
   Target,
   Calendar,

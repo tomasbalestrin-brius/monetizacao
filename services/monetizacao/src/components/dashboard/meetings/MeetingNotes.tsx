@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useMeetingNotes, useAddNote, useDeleteNote, useUpdateNote } from '@/hooks/useMeetings';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';

@@ -1,4 +1,3 @@
-import React from 'react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import type { FunnelReport } from '@/hooks/useFunnels';
@@ -56,7 +55,7 @@ export function FunnelChart({ report }: FunnelChartProps) {
                   borderRadius: '8px',
                   color: 'hsl(var(--foreground))',
                 }}
-                formatter={(value: number, name: string, entry: any) => {
+                formatter={(value: number, _name: string, entry: any) => {
                   const rate = entry.payload.rate;
                   return [
                     `${value}${rate !== null ? ` (${rate.toFixed(1)}%)` : ''}`,

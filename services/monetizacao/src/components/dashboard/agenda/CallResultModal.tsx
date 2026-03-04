@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { X, CheckCircle, XCircle, DollarSign, Loader2 } from 'lucide-react';
 import { useRegisterCallResult } from '@/hooks/useAppointments';
 import { toast } from 'sonner';

@@ -1,4 +1,3 @@
-import React from 'react';
 import { ArrowRight, TrendingUp } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import type { FunnelSummary } from '@/hooks/useFunnels';

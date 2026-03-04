@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Clock, Save, Loader2 } from 'lucide-react';
 import {
   useCloserAvailability,

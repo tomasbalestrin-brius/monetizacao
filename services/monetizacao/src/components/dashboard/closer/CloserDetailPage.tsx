@@ -1,4 +1,4 @@
-import React, { useCallback, useState, useMemo } from 'react';
+import { useCallback, useState, useMemo } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
 import { ArrowLeft, Phone, Target, DollarSign, TrendingUp, ChevronLeft, ChevronRight, XCircle, Plus, Filter, Layers } from 'lucide-react';
@@ -48,7 +48,7 @@ interface CloserDetailPageProps {
 }
 
 // Calculate aggregated metrics from an array of metrics
-function calculateAggregatedMetrics(metrics: CloserMetricRecord[], squadSlug: string) {
+function calculateAggregatedMetrics(metrics: CloserMetricRecord[], _squadSlug: string) {
   if (metrics.length === 0) {
     return {
       totalCalls: 0,

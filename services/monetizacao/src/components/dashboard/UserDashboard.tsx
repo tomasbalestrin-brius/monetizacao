@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import { useState, useMemo } from 'react';
 import { LogOut, Loader2, TrendingUp, LinkIcon } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useCurrentUserEntityLinks } from '@/hooks/useUserEntityLinks';

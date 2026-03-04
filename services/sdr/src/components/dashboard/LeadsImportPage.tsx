@@ -1,7 +1,6 @@
-import React, { useState } from 'react';
-import { useLeads, useCreateLead, useUpdateLead, type Lead } from '@/hooks/useLeads';
+import { useState } from 'react';
+import { useLeads, useCreateLead } from '@/hooks/useLeads';
 import { useFunnels } from '@/hooks/useFunnels';
-import { useSDRs } from '@/hooks/useSdrMetrics';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -11,15 +10,10 @@ import {
   Upload,
   Plus,
   Search,
-  Phone,
-  Mail,
-  User,
-  GitBranch,
   Loader2,
   X,
   Check,
   Users,
-  Filter,
 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -72,7 +66,6 @@ export function LeadsImportPage() {
     status: filterStatus !== 'all' ? filterStatus : undefined,
   });
   const { data: funnels } = useFunnels();
-  const { data: sdrs } = useSDRs();
   const createLead = useCreateLead();
 
   const handleCreateLead = async () => {

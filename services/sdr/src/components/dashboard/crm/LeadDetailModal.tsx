@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { X, Phone, Mail, Instagram, Building, MapPin, DollarSign, Send } from 'lucide-react';
 import { useLeadActivities, useAddLeadActivity, useUpdateLead } from '@/hooks/useLeads';
 import { useArchiveLead } from '@/hooks/useLeadCleanup';
