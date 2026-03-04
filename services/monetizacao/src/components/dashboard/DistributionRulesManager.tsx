@@ -1,10 +1,9 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { Loader2, Plus, Trash2, Play, Pause, Users, ArrowRightLeft } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import {
@@ -14,7 +13,6 @@ import {
   useDeleteDistributionRule,
   useDistributionLogs,
   useSdrCapacities,
-  useUpsertSdrCapacity,
 } from '@/hooks/useDistributionRules';
 import { useFunnels } from '@/hooks/useFunnels';
 import { useSDRs } from '@/hooks/useSdrMetrics';
@@ -45,7 +43,6 @@ export function DistributionRulesManager() {
   const createRule = useCreateDistributionRule();
   const updateRule = useUpdateDistributionRule();
   const deleteRule = useDeleteDistributionRule();
-  const upsertCapacity = useUpsertSdrCapacity();
 
   // Create form state
   const [formName, setFormName] = useState('');

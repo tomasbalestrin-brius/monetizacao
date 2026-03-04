@@ -1,4 +1,4 @@
-import React from 'react';
+
 import { TrendingUp, Edit } from 'lucide-react';
 import {
   Dialog,

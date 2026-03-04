@@ -1,10 +1,9 @@
-import React, { useState, useCallback, useMemo } from 'react';
+import { useState, useCallback, useMemo } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
 import { Phone, Users, UserCheck, Calendar, TrendingUp, ShoppingCart, Plus, CalendarPlus } from 'lucide-react';
 import { MonthSelector, getMonthPeriod } from '@/components/dashboard/MonthSelector';
-import { WeekSelector, getWeeksOfMonth } from '@/components/dashboard/WeekSelector';
-import { parseDateString } from '@/lib/utils';
+import { WeekSelector } from '@/components/dashboard/WeekSelector';
 import { SDRTypeToggle, SDRType } from './SDRTypeToggle';
 import { SDRMetricCard } from './SDRMetricCard';
 import { SDRCard } from './SDRCard';
@@ -49,12 +48,6 @@ export function SDRDashboard() {
     setSelectedWeek(null); // Reset week when month changes
   }, []);
 
-  // Get week boundaries for filtering
-  const weekFilter = useMemo(() => {
-    if (!selectedWeek) return null;
-    const weeks = getWeeksOfMonth(selectedMonth);
-    return weeks.find(w => w.weekKey === selectedWeek) || null;
-  }, [selectedWeek, selectedMonth]);
 
   const handleSDRClick = (sdrId: string) => {
     setSearchParams({ module: 'sdrs', sdr: sdrId });
@@ -82,7 +75,6 @@ export function SDRDashboard() {
   }
 
   const isLoading = isLoadingTotal || isLoadingSDRs;
-  const hasData = sdrsWithMetrics && sdrsWithMetrics.length > 0;
 
   return (
     <PullToRefresh onRefresh={handleRefresh}>

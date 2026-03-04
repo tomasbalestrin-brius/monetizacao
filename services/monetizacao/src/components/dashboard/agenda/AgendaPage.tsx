@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import { useState, useMemo } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useAppointments, useClosersList } from '@/hooks/useAppointments';
 import { useCloserAvailability, useDefaultAvailability } from '@/hooks/useCloserAvailability';

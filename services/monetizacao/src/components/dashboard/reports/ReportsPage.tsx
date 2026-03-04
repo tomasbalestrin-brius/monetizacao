@@ -1,11 +1,11 @@
-import React, { useState, useMemo } from 'react';
+import { useState, useMemo } from 'react';
 import { FileText, TrendingUp, Users, Phone, DollarSign, Target, Filter } from 'lucide-react';
-import { format, startOfMonth, endOfMonth } from 'date-fns';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { startOfMonth } from 'date-fns';
+import { Card, CardContent } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { MonthSelector, getMonthPeriod } from '@/components/dashboard/MonthSelector';
 import { PeriodFilter } from '@/components/dashboard/PeriodFilter';
-import { useAllFunnelsSummary, useFunnelReport, useSalesByPersonAndProduct, type FunnelSummary } from '@/hooks/useFunnels';
+import { useAllFunnelsSummary, useFunnelReport, useSalesByPersonAndProduct } from '@/hooks/useFunnels';
 import { MetricCardSkeletonGrid } from '@/components/dashboard/skeletons';
 import { FunnelChart } from './FunnelChart';
 import { ProductSalesTable } from './ProductSalesTable';

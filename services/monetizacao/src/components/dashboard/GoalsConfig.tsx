@@ -1,6 +1,5 @@
-import React, { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { format, startOfMonth } from 'date-fns';
-import { ptBR } from 'date-fns/locale';
 import { Loader2, Save, Target } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
@@ -12,7 +11,7 @@ import { useAllGoals, useUpsertGoal, CLOSER_METRIC_KEYS } from '@/hooks/useGoals
 import { useAuth } from '@/contexts/AuthContext';
 
 export function GoalsConfig() {
-  const { isAdmin, isManager, permissions } = useAuth();
+  const { isAdmin, permissions } = useAuth();
   const entityType = 'closer' as const;
   const [selectedEntityId, setSelectedEntityId] = useState<string>('');
   const [selectedMonth, setSelectedMonth] = useState<Date>(startOfMonth(new Date()));
@@ -50,7 +49,7 @@ export function GoalsConfig() {
   }, [existingGoals, selectedEntityId, entityType]);
 
   // Sync values when entity goals change
-  React.useEffect(() => {
+  useEffect(() => {
     const newValues: Record<string, string> = {};
     metricKeys.forEach(({ key }) => {
       newValues[key] = entityGoals[key]?.toString() || '';

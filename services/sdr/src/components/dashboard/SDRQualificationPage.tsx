@@ -1,11 +1,11 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { useLeads, useUpdateLead } from '@/hooks/useLeads';
 import { useFunnels } from '@/hooks/useFunnels';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
-import { UserCheck, Search, Diamond, Award, Medal, Shield, GitBranch } from 'lucide-react';
+import { UserCheck, Search, Diamond, Award, Medal, Shield } from 'lucide-react';
 import { Loader2 } from 'lucide-react';
 
 const classificationConfig = {

@@ -1,5 +1,4 @@
-import React from 'react';
-import { Phone, Target, TrendingUp, DollarSign, Zap, Shield, Waves } from 'lucide-react';
+import { Phone, Target, TrendingUp, DollarSign, Zap, Waves } from 'lucide-react';
 import { MetricCard } from './MetricCard';
 import { CombinedMetricCard } from './CombinedMetricCard';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
@@ -177,7 +176,7 @@ interface SquadSectionLoadingProps {
   showClosers?: boolean;
 }
 
-export function SquadSectionLoading({ showClosers = true }: SquadSectionLoadingProps) {
+export function SquadSectionLoading(_: SquadSectionLoadingProps = {}) {
   return (
     <Card className="glass-card overflow-hidden">
       <CardHeader className="pb-4">

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { Trash2, RotateCcw, AlertTriangle, Loader2, Archive } from 'lucide-react';
 import { useCleanupLogs, useArchiveBronzeLeads, useRestoreLead, type CleanupLog } from '@/hooks/useLeadCleanup';
 import { useLeads } from '@/hooks/useLeads';

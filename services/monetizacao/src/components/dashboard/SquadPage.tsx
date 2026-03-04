@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useMemo } from 'react';
+import { useState, useCallback, useMemo } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { Phone, Target, TrendingUp, DollarSign, Users, Loader2, XCircle, Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';

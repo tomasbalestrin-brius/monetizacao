@@ -1,7 +1,6 @@
-import React from 'react';
+import type { ElementType } from 'react';
 import {
   LayoutDashboard,
-  Users,
   FileText,
   Settings,
   LogOut,
@@ -27,7 +26,7 @@ export type ModuleId = 'dashboard' | 'agenda' | 'eagles' | 'sharks' | 'reports' 
 interface MenuItem {
   id: ModuleId;
   label: string;
-  icon: React.ElementType;
+  icon: ElementType;
   permission: string;
   color?: string;
 }
@@ -61,7 +60,7 @@ interface SidebarProps {
 }
 
 export function Sidebar({ isOpen, onClose, activeModule, onModuleChange }: SidebarProps) {
-  const { signOut, hasPermission, isAdmin, isManager, isCloser, isLider, isAdminOrLider } = useAuth();
+  const { signOut, hasPermission, isAdmin, isLider } = useAuth();
   const { theme, toggleTheme } = useTheme();
 
   const handleLogout = async () => {

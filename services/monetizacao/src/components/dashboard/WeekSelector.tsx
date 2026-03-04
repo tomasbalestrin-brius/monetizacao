@@ -1,6 +1,5 @@
-import React, { useMemo } from 'react';
+import { useMemo } from 'react';
 import { startOfMonth, endOfMonth, startOfWeek, endOfWeek, addWeeks, format, isBefore, isAfter, max, min } from 'date-fns';
-import { ptBR } from 'date-fns/locale';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 export interface WeekOption {

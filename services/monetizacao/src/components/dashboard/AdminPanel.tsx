@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { Trash2, Loader2, Plus, Settings, Database, Users, Link2, Edit2, Target, ArrowRightLeft, Shield, Tag, FileText } from 'lucide-react';
+import { useState } from 'react';
+import { Trash2, Loader2, Plus, Database, Users, Link2, Edit2, Target, ArrowRightLeft, Shield, Tag, FileText } from 'lucide-react';
 import { useUsers, useAssignRole, useTogglePermission } from '@/hooks/useUserManagement';
 import { DeleteUserDialog } from './DeleteUserDialog';
 import { useAllEntityLinks, useClosersForLinking, useSDRsForLinking } from '@/hooks/useUserEntityLinks';
