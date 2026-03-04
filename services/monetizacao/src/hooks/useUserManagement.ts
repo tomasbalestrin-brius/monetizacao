@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from 'sonner';
 import type { Database } from '@/integrations/supabase/types';
 
 export type AppRole = Database['public']['Enums']['app_role'];
@@ -60,7 +60,6 @@ export function useUsers() {
 
 export function useAssignRole() {
   const queryClient = useQueryClient();
-  const { toast } = useToast();
 
   return useMutation({
     mutationFn: async ({ userId, role }: { userId: string; role: AppRole }) => {
@@ -74,22 +73,15 @@ export function useAssignRole() {
       const { error } = await supabase
         .from('user_roles')
         .insert({ user_id: userId, role });
-      
+
       if (error) throw error;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin-users'] });
-      toast({
-        title: 'Função atualizada',
-        description: 'A função do usuário foi atualizada com sucesso.',
-      });
+      toast.success('Função atualizada', { description: 'A função do usuário foi atualizada com sucesso.' });
     },
     onError: (error) => {
-      toast({
-        variant: 'destructive',
-        title: 'Erro',
-        description: 'Não foi possível atualizar a função.',
-      });
+      toast.error('Erro', { description: 'Não foi possível atualizar a função.' });
       console.error('Error assigning role:', error);
     },
   });
@@ -97,7 +89,6 @@ export function useAssignRole() {
 
 export function useTogglePermission() {
   const queryClient = useQueryClient();
-  const { toast } = useToast();
 
   return useMutation({
     mutationFn: async ({ userId, module, hasPermission }: { userId: string; module: string; hasPermission: boolean }) => {
@@ -108,30 +99,23 @@ export function useTogglePermission() {
           .delete()
           .eq('user_id', userId)
           .eq('module', module);
-        
+
         if (error) throw error;
       } else {
         // Add permission
         const { error } = await supabase
           .from('module_permissions')
           .insert({ user_id: userId, module });
-        
+
         if (error) throw error;
       }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin-users'] });
-      toast({
-        title: 'Permissão atualizada',
-        description: 'A permissão foi atualizada com sucesso.',
-      });
+      toast.success('Permissão atualizada', { description: 'A permissão foi atualizada com sucesso.' });
     },
     onError: (error) => {
-      toast({
-        variant: 'destructive',
-        title: 'Erro',
-        description: 'Não foi possível atualizar a permissão.',
-      });
+      toast.error('Erro', { description: 'Não foi possível atualizar a permissão.' });
       console.error('Error toggling permission:', error);
     },
   });
@@ -139,7 +123,6 @@ export function useTogglePermission() {
 
 export function useDeleteUser() {
   const queryClient = useQueryClient();
-  const { toast } = useToast();
 
   return useMutation({
     mutationFn: async (userId: string) => {
@@ -147,29 +130,22 @@ export function useDeleteUser() {
         .from('user_roles')
         .delete()
         .eq('user_id', userId);
-      
+
       if (rolesError) throw rolesError;
 
       const { error: permsError } = await supabase
         .from('module_permissions')
         .delete()
         .eq('user_id', userId);
-      
+
       if (permsError) throw permsError;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin-users'] });
-      toast({
-        title: 'Usuário atualizado',
-        description: 'As permissões do usuário foram removidas.',
-      });
+      toast.success('Usuário atualizado', { description: 'As permissões do usuário foram removidas.' });
     },
     onError: (error) => {
-      toast({
-        variant: 'destructive',
-        title: 'Erro',
-        description: 'Não foi possível atualizar o usuário.',
-      });
+      toast.error('Erro', { description: 'Não foi possível atualizar o usuário.' });
       console.error('Error deleting user:', error);
     },
   });
@@ -177,7 +153,6 @@ export function useDeleteUser() {
 
 export function useDeleteUserCompletely() {
   const queryClient = useQueryClient();
-  const { toast } = useToast();
 
   return useMutation({
     mutationFn: async (userId: string) => {
@@ -187,22 +162,15 @@ export function useDeleteUserCompletely() {
 
       if (response.error) throw response.error;
       if (response.data?.error) throw new Error(response.data.error);
-      
+
       return response.data;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin-users'] });
-      toast({
-        title: 'Usuário excluído',
-        description: 'O usuário foi removido permanentemente do sistema.',
-      });
+      toast.success('Usuário excluído', { description: 'O usuário foi removido permanentemente do sistema.' });
     },
     onError: (error: Error) => {
-      toast({
-        variant: 'destructive',
-        title: 'Erro ao excluir usuário',
-        description: error.message,
-      });
+      toast.error('Erro ao excluir usuário', { description: error.message });
       console.error('Error deleting user completely:', error);
     },
   });
@@ -210,7 +178,6 @@ export function useDeleteUserCompletely() {
 
 export function useCreateUser() {
   const queryClient = useQueryClient();
-  const { toast } = useToast();
 
   return useMutation({
     mutationFn: async ({ email, password, role, permissions, linked_closer_id, linked_sdr_id }: {
@@ -227,22 +194,15 @@ export function useCreateUser() {
 
       if (response.error) throw response.error;
       if (response.data?.error) throw new Error(response.data.error);
-      
+
       return response.data;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin-users'] });
-      toast({
-        title: 'Usuário criado',
-        description: 'O novo usuário foi criado com sucesso.',
-      });
+      toast.success('Usuário criado', { description: 'O novo usuário foi criado com sucesso.' });
     },
     onError: (error: Error) => {
-      toast({
-        variant: 'destructive',
-        title: 'Erro ao criar usuário',
-        description: error.message,
-      });
+      toast.error('Erro ao criar usuário', { description: error.message });
       console.error('Error creating user:', error);
     },
   });

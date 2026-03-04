@@ -21,6 +21,7 @@ import { Toaster } from '@/components/ui/toaster';
 import { Toaster as Sonner } from '@/components/ui/sonner';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
+import { AuthProvider } from '@/contexts/AuthContext';
 import { Loader2 } from 'lucide-react';
 
 // Lazy-loaded pages
@@ -58,15 +59,17 @@ function ModuleLoader() {
  */
 export function MonetizacaoRoutes() {
   return (
-    <ErrorBoundary section="monetizacao">
-      <Suspense fallback={<ModuleLoader />}>
-        <Routes>
-          <Route path="/" element={<Index />} />
-          <Route path="/auth" element={<Auth />} />
-          <Route path="*" element={<NotFound />} />
-        </Routes>
-      </Suspense>
-    </ErrorBoundary>
+    <AuthProvider>
+      <ErrorBoundary section="monetizacao">
+        <Suspense fallback={<ModuleLoader />}>
+          <Routes>
+            <Route path="/" element={<Index />} />
+            <Route path="/auth" element={<Auth />} />
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </Suspense>
+      </ErrorBoundary>
+    </AuthProvider>
   );
 }
 
