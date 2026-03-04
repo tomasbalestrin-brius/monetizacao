@@ -10,6 +10,7 @@ const routeTitles: Record<string, string> = {
   '/': 'Inicio',
   '/monetizacao': 'Monetizacao',
   '/sdr': 'Bethel SDR',
+  '/admin': 'Admin Mestre',
 };
 
 function getTitle(pathname: string): string {

@@ -10,6 +10,7 @@ import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { PlatformLayout } from "@/layouts/PlatformLayout";
 import { AuthPage } from "@/pages/AuthPage";
 import { HomePage } from "@/pages/HomePage";
+import { MasterAdminPage } from "@/pages/MasterAdminPage";
 import { NotFoundPage } from "@/pages/NotFoundPage";
 
 // Initialize Supabase client (singleton - must happen before any auth/data usage)
@@ -66,6 +67,7 @@ const App = () => (
               }
             >
               <Route index element={<HomePage />} />
+              <Route path="admin" element={<MasterAdminPage />} />
             </Route>
 
             {/* Monetização Microservice - own layout, no platform shell */}

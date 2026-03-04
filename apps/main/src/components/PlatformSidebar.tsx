@@ -11,6 +11,7 @@ import {
   ChevronRight,
   Sun,
   Moon,
+  Settings,
 } from 'lucide-react';
 
 interface ServiceItem {
@@ -46,6 +47,14 @@ const services: ServiceItem[] = [
     path: '/sdr',
     description: 'CRM, leads e agendamentos',
     allowedRoles: ['admin', 'lider', 'sdr'],
+  },
+  {
+    id: 'admin',
+    label: 'Admin Mestre',
+    icon: Settings,
+    path: '/admin',
+    description: 'Controle de acessos',
+    allowedRoles: ['admin'],
   },
 ];
 

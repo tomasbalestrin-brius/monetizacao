@@ -17,7 +17,7 @@ import { QualificationRulesManager } from './QualificationRulesManager';
 import { NichesManager } from './NichesManager';
 import { ActivityLogsViewer } from './ActivityLogsViewer';
 
-const MODULES = ['dashboard', 'eagles', 'sharks', 'sdrs', 'reports', 'admin'];
+const MODULES = ['dashboard', 'eagles', 'sharks', 'reports', 'admin'];
 
 export function AdminPanel() {
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
