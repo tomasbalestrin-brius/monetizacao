@@ -5,6 +5,7 @@ import { useFunnels } from '@/hooks/useFunnels';
 import { LeadCard } from './LeadCard';
 import { LeadDetailModal } from './LeadDetailModal';
 import { CreateLeadModal } from './CreateLeadModal';
+import { ScheduleLeadModal } from './ScheduleLeadModal';
 import { Loader2 } from 'lucide-react';
 
 export function CrmKanbanPage() {
@@ -13,6 +14,7 @@ export function CrmKanbanPage() {
   const { data: funnels } = useFunnels();
 
   const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
+  const [scheduleLead, setScheduleLead] = useState<Lead | null>(null);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [createColumnId, setCreateColumnId] = useState<string | undefined>();
   const [search, setSearch] = useState('');
@@ -74,7 +76,7 @@ export function CrmKanbanPage() {
         <div>
           <h1 className="text-2xl font-bold text-foreground flex items-center gap-2">
             <Kanban className="h-6 w-6" />
-            CRM - Gestao de Leads
+            CRM Leads
           </h1>
           <p className="text-sm text-muted-foreground mt-1">
             Gerencie seus leads pelo quadro Kanban
@@ -153,6 +155,7 @@ export function CrmKanbanPage() {
                     lead={lead}
                     onClick={() => setSelectedLead(lead)}
                     onDragStart={(e) => handleDragStart(e, lead.id)}
+                    onSchedule={() => setScheduleLead(lead)}
                   />
                 ))}
                 {leads.length === 0 && (
@@ -199,6 +202,12 @@ export function CrmKanbanPage() {
         <CreateLeadModal
           defaultColumnId={createColumnId}
           onClose={() => setShowCreateModal(false)}
+        />
+      )}
+      {scheduleLead && (
+        <ScheduleLeadModal
+          lead={scheduleLead}
+          onClose={() => setScheduleLead(null)}
         />
       )}
     </div>

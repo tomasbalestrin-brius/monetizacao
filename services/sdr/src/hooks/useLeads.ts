@@ -208,6 +208,82 @@ export function useCreateLead() {
   });
 }
 
+// CRM Column CRUD
+export function useCreateCrmColumn() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (column: { name: string; color: string; position: number }) => {
+      const { data, error } = await supabase
+        .from('crm_columns')
+        .insert(column)
+        .select()
+        .single();
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['crm-columns'] });
+    },
+  });
+}
+
+export function useUpdateCrmColumn() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ id, ...updates }: { id: string; name?: string; color?: string; position?: number }) => {
+      const { data, error } = await supabase
+        .from('crm_columns')
+        .update(updates)
+        .eq('id', id)
+        .select()
+        .single();
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['crm-columns'] });
+    },
+  });
+}
+
+export function useDeleteCrmColumn() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase
+        .from('crm_columns')
+        .delete()
+        .eq('id', id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['crm-columns'] });
+    },
+  });
+}
+
+export function useReorderCrmColumns() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (columns: { id: string; position: number }[]) => {
+      for (const col of columns) {
+        const { error } = await supabase
+          .from('crm_columns')
+          .update({ position: col.position })
+          .eq('id', col.id);
+        if (error) throw error;
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['crm-columns'] });
+    },
+  });
+}
+
 export function useAddLeadActivity() {
   const queryClient = useQueryClient();
   const { user } = useAuth();

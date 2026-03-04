@@ -1,11 +1,11 @@
 import React, { useState } from 'react';
 import { useLeads, useUpdateLead } from '@/hooks/useLeads';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { useFunnels } from '@/hooks/useFunnels';
+import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
-import { UserCheck, Search, Filter, Diamond, Award, Medal, Shield } from 'lucide-react';
+import { UserCheck, Search, Diamond, Award, Medal, Shield, GitBranch } from 'lucide-react';
 import { Loader2 } from 'lucide-react';
 
 const classificationConfig = {
@@ -19,17 +19,21 @@ export function SDRQualificationPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterClassification, setFilterClassification] = useState<string>('all');
   const [filterStatus, setFilterStatus] = useState<string>('all');
+  const [filterFunnel, setFilterFunnel] = useState<string>('all');
+
+  const { data: funnels } = useFunnels();
 
   const { data: leads, isLoading } = useLeads({
     search: searchTerm || undefined,
     classification: filterClassification !== 'all' ? filterClassification : undefined,
     status: filterStatus !== 'all' ? filterStatus : undefined,
+    funnelId: filterFunnel !== 'all' ? filterFunnel : undefined,
   });
 
   const updateLead = useUpdateLead();
 
   const handleClassificationChange = (leadId: string, classification: string) => {
-    updateLead.mutate({ id: leadId, classification });
+    updateLead.mutate({ leadId, data: { classification: classification === 'none' ? null : classification } });
   };
 
   if (isLoading) {
@@ -47,7 +51,7 @@ export function SDRQualificationPage() {
           <UserCheck size={24} />
           Qualificação de Leads
         </h1>
-        <p className="text-muted-foreground mt-1">Classifique e qualifique leads do funil</p>
+        <p className="text-muted-foreground mt-1">Selecione o funil e classifique os leads</p>
       </div>
 
       {/* Filters */}
@@ -61,6 +65,17 @@ export function SDRQualificationPage() {
             className="pl-10"
           />
         </div>
+        <Select value={filterFunnel} onValueChange={setFilterFunnel}>
+          <SelectTrigger className="w-[180px]">
+            <SelectValue placeholder="Funil" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Todos os funis</SelectItem>
+            {funnels?.map((f) => (
+              <SelectItem key={f.id} value={f.id}>{f.name}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
         <Select value={filterClassification} onValueChange={setFilterClassification}>
           <SelectTrigger className="w-[160px]">
             <SelectValue placeholder="Classificação" />
@@ -86,6 +101,21 @@ export function SDRQualificationPage() {
           </SelectContent>
         </Select>
       </div>
+
+      {/* Stats */}
+      {leads && leads.length > 0 && (
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+          {Object.entries(classificationConfig).map(([key, config]) => {
+            const count = leads.filter((l: any) => l.classification === key).length;
+            return (
+              <div key={key} className={`rounded-lg p-3 ${config.color}`}>
+                <p className="text-lg font-bold">{count}</p>
+                <p className="text-xs">{config.label}</p>
+              </div>
+            );
+          })}
+        </div>
+      )}
 
       {/* Leads List */}
       <div className="space-y-3">
@@ -116,7 +146,7 @@ export function SDRQualificationPage() {
 
                     <Select
                       value={lead.classification || 'none'}
-                      onValueChange={(value) => handleClassificationChange(lead.id, value === 'none' ? null : value)}
+                      onValueChange={(value) => handleClassificationChange(lead.id, value)}
                     >
                       <SelectTrigger className="w-[140px]">
                         <SelectValue placeholder="Classificar" />

@@ -10,7 +10,7 @@ interface BottomNavigationProps {
 
 const navItems = [
   { id: 'dashboard' as ModuleId, label: 'Dashboard', icon: LayoutDashboard },
-  { id: 'lead-management' as ModuleId, label: 'Gestão', icon: Users },
+  { id: 'lead-management' as ModuleId, label: 'CRM', icon: Users },
   { id: 'leads' as ModuleId, label: 'Leads', icon: UserCheck },
   { id: 'reports' as ModuleId, label: 'Relatórios', icon: FileText },
 ];

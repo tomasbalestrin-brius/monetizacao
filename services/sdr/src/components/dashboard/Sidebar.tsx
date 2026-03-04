@@ -29,7 +29,7 @@ interface MenuItem {
 
 const mainItems: MenuItem[] = [
   { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard, permission: 'dashboard' },
-  { id: 'lead-management', label: 'Gestão de Leads', icon: Users, permission: 'lead-management' },
+  { id: 'lead-management', label: 'CRM Leads', icon: Users, permission: 'lead-management' },
   { id: 'leads', label: 'Leads', icon: UserCheck, permission: 'leads' },
   { id: 'reports', label: 'Relatórios', icon: FileText, permission: 'reports' },
 ];
