@@ -16,6 +16,7 @@ const UserDashboard = lazy(() => import('@/components/dashboard/UserDashboard').
 const GoalsConfig = lazy(() => import('@/components/dashboard/GoalsConfig').then(m => ({ default: m.GoalsConfig })));
 const MeetingsPage = lazy(() => import('@/components/dashboard/meetings').then(m => ({ default: m.MeetingsPage })));
 const ReportsPage = lazy(() => import('@/components/dashboard/reports').then(m => ({ default: m.ReportsPage })));
+const AgendaPage = lazy(() => import('@/components/dashboard/agenda/AgendaPage').then(m => ({ default: m.AgendaPage })));
 
 function PageLoader() {
   return (
@@ -27,17 +28,25 @@ function PageLoader() {
 
 const Index = () => {
   const [searchParams] = useSearchParams();
-  const { user, loading, isUser } = useAuth();
+  const { user, loading, isUser, isCloser } = useAuth();
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [activeModule, setActiveModule] = useState<ModuleId>('dashboard');
+  // Closers default to 'agenda', everyone else to 'dashboard'
+  const [activeModule, setActiveModule] = useState<ModuleId>(isCloser ? 'agenda' : 'dashboard');
 
   // Handle URL module parameter
   useEffect(() => {
     const moduleParam = searchParams.get('module');
-    if (moduleParam && ['dashboard', 'eagles', 'sharks', 'sdrs', 'reports', 'admin', 'goals', 'meetings'].includes(moduleParam)) {
+    if (moduleParam && ['dashboard', 'agenda', 'eagles', 'sharks', 'sdrs', 'reports', 'admin', 'goals', 'meetings'].includes(moduleParam)) {
       setActiveModule(moduleParam as ModuleId);
     }
   }, [searchParams]);
+
+  // Set default module when role loads
+  useEffect(() => {
+    if (isCloser && activeModule === 'dashboard') {
+      setActiveModule('agenda');
+    }
+  }, [isCloser]);
 
   if (loading) {
     return (
@@ -50,19 +59,12 @@ const Index = () => {
     );
   }
 
-  // Role "user" gets a dedicated layout without sidebar
-  if (isUser) {
-    return (
-      <Suspense fallback={<PageLoader />}>
-        <UserDashboard />
-      </Suspense>
-    );
-  }
-
   const renderContent = () => {
     switch (activeModule) {
       case 'dashboard':
         return <DashboardOverview />;
+      case 'agenda':
+        return <AgendaPage />;
       case 'eagles':
         return <SquadPage squadSlug="eagles" />;
       case 'sharks':
@@ -78,7 +80,7 @@ const Index = () => {
       case 'reports':
         return <ReportsPage />;
       default:
-        return <DashboardOverview />;
+        return isCloser ? <AgendaPage /> : <DashboardOverview />;
     }
   };
 

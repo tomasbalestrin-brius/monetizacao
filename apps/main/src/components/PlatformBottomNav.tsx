@@ -1,23 +1,32 @@
 import React from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { LayoutDashboard, TrendingUp } from 'lucide-react';
+import { useAuth } from '@bethel/shared-auth';
+import { LayoutDashboard, TrendingUp, Users } from 'lucide-react';
 
 interface NavItem {
   id: string;
   label: string;
   icon: React.ElementType;
   path: string;
+  allowedRoles?: string[];
 }
 
-const navItems: NavItem[] = [
-  { id: 'home', label: 'Início', icon: LayoutDashboard, path: '/' },
-  { id: 'monetizacao', label: 'Monetização', icon: TrendingUp, path: '/monetizacao' },
-  // Future: { id: 'crm', label: 'CRM', icon: Users, path: '/crm' },
+const allNavItems: NavItem[] = [
+  { id: 'home', label: 'Inicio', icon: LayoutDashboard, path: '/' },
+  { id: 'monetizacao', label: 'Monetizacao', icon: TrendingUp, path: '/monetizacao', allowedRoles: ['admin', 'lider', 'closer'] },
+  { id: 'sdr', label: 'SDR', icon: Users, path: '/sdr', allowedRoles: ['admin', 'lider', 'sdr'] },
 ];
 
 export function PlatformBottomNav() {
   const navigate = useNavigate();
   const location = useLocation();
+  const { role } = useAuth();
+
+  const navItems = allNavItems.filter((item) => {
+    if (!item.allowedRoles) return true;
+    if (!role) return false;
+    return item.allowedRoles.includes(role);
+  });
 
   const isActive = (path: string) => {
     if (path === '/') return location.pathname === '/';

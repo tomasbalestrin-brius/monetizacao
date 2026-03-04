@@ -7,8 +7,6 @@ export type Json =
   | Json[]
 
 export type Database = {
-  // Allows to automatically instantiate createClient with right options
-  // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
     PostgrestVersion: "14.1"
   }
@@ -45,6 +43,679 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      crm_columns: {
+        Row: {
+          id: string
+          name: string
+          position: number
+          color: string
+          editable: boolean
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          name: string
+          position: number
+          color?: string
+          editable?: boolean
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          name?: string
+          position?: number
+          color?: string
+          editable?: boolean
+          created_at?: string
+        }
+        Relationships: []
+      }
+      leads: {
+        Row: {
+          id: string
+          full_name: string
+          phone: string | null
+          email: string | null
+          revenue: number | null
+          niche: string | null
+          instagram: string | null
+          main_pain: string | null
+          difficulty: string | null
+          state: string | null
+          business_name: string | null
+          business_position: string | null
+          has_partner: boolean | null
+          knows_specialist_since: string | null
+          funnel_id: string | null
+          classification: Database["public"]["Enums"]["lead_classification"] | null
+          qualification: string | null
+          assigned_sdr_id: string | null
+          status: Database["public"]["Enums"]["lead_status"]
+          crm_column_id: string | null
+          custom_fields: Json
+          distributed_at: string | null
+          distribution_origin: string | null
+          sheet_row_id: string | null
+          sheet_source_url: string | null
+          form_filled_at: string | null
+          imported_at: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          full_name: string
+          phone?: string | null
+          email?: string | null
+          revenue?: number | null
+          niche?: string | null
+          instagram?: string | null
+          main_pain?: string | null
+          difficulty?: string | null
+          state?: string | null
+          business_name?: string | null
+          business_position?: string | null
+          has_partner?: boolean | null
+          knows_specialist_since?: string | null
+          funnel_id?: string | null
+          classification?: Database["public"]["Enums"]["lead_classification"] | null
+          qualification?: string | null
+          assigned_sdr_id?: string | null
+          status?: Database["public"]["Enums"]["lead_status"]
+          crm_column_id?: string | null
+          custom_fields?: Json
+          distributed_at?: string | null
+          distribution_origin?: string | null
+          sheet_row_id?: string | null
+          sheet_source_url?: string | null
+          form_filled_at?: string | null
+          imported_at?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          full_name?: string
+          phone?: string | null
+          email?: string | null
+          revenue?: number | null
+          niche?: string | null
+          instagram?: string | null
+          main_pain?: string | null
+          difficulty?: string | null
+          state?: string | null
+          business_name?: string | null
+          business_position?: string | null
+          has_partner?: boolean | null
+          knows_specialist_since?: string | null
+          funnel_id?: string | null
+          classification?: Database["public"]["Enums"]["lead_classification"] | null
+          qualification?: string | null
+          assigned_sdr_id?: string | null
+          status?: Database["public"]["Enums"]["lead_status"]
+          crm_column_id?: string | null
+          custom_fields?: Json
+          distributed_at?: string | null
+          distribution_origin?: string | null
+          sheet_row_id?: string | null
+          sheet_source_url?: string | null
+          form_filled_at?: string | null
+          imported_at?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "leads_funnel_id_fkey"
+            columns: ["funnel_id"]
+            isOneToOne: false
+            referencedRelation: "funnels"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "leads_crm_column_id_fkey"
+            columns: ["crm_column_id"]
+            isOneToOne: false
+            referencedRelation: "crm_columns"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      appointments: {
+        Row: {
+          id: string
+          lead_id: string
+          sdr_id: string | null
+          closer_id: string | null
+          funnel_id: string | null
+          qualification: string | null
+          scheduled_date: string
+          duration: number
+          timezone: string
+          status: Database["public"]["Enums"]["appointment_status"]
+          reschedule_count: number
+          attended: boolean | null
+          converted: boolean | null
+          conversion_value: number | null
+          notes: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          lead_id: string
+          sdr_id?: string | null
+          closer_id?: string | null
+          funnel_id?: string | null
+          qualification?: string | null
+          scheduled_date: string
+          duration?: number
+          timezone?: string
+          status?: Database["public"]["Enums"]["appointment_status"]
+          reschedule_count?: number
+          attended?: boolean | null
+          converted?: boolean | null
+          conversion_value?: number | null
+          notes?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          lead_id?: string
+          sdr_id?: string | null
+          closer_id?: string | null
+          funnel_id?: string | null
+          qualification?: string | null
+          scheduled_date?: string
+          duration?: number
+          timezone?: string
+          status?: Database["public"]["Enums"]["appointment_status"]
+          reschedule_count?: number
+          attended?: boolean | null
+          converted?: boolean | null
+          conversion_value?: number | null
+          notes?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "appointments_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "leads"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "appointments_funnel_id_fkey"
+            columns: ["funnel_id"]
+            isOneToOne: false
+            referencedRelation: "funnels"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      closer_availability: {
+        Row: {
+          id: string
+          closer_id: string
+          day_of_week: number
+          start_time: string
+          end_time: string
+          break_start: string | null
+          break_end: string | null
+          active: boolean
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          closer_id: string
+          day_of_week: number
+          start_time: string
+          end_time: string
+          break_start?: string | null
+          break_end?: string | null
+          active?: boolean
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          closer_id?: string
+          day_of_week?: number
+          start_time?: string
+          end_time?: string
+          break_start?: string | null
+          break_end?: string | null
+          active?: boolean
+          created_at?: string
+        }
+        Relationships: []
+      }
+      default_availability: {
+        Row: {
+          id: string
+          day_of_week: number
+          start_time: string
+          end_time: string
+          break_start: string | null
+          break_end: string | null
+          active: boolean
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          day_of_week: number
+          start_time: string
+          end_time: string
+          break_start?: string | null
+          break_end?: string | null
+          active?: boolean
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          day_of_week?: number
+          start_time?: string
+          end_time?: string
+          break_start?: string | null
+          break_end?: string | null
+          active?: boolean
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      lead_activities: {
+        Row: {
+          id: string
+          lead_id: string
+          column_id: string | null
+          user_id: string | null
+          action_type: string
+          notes: string | null
+          tags: string[]
+          details: Json
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          lead_id: string
+          column_id?: string | null
+          user_id?: string | null
+          action_type: string
+          notes?: string | null
+          tags?: string[]
+          details?: Json
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          lead_id?: string
+          column_id?: string | null
+          user_id?: string | null
+          action_type?: string
+          notes?: string | null
+          tags?: string[]
+          details?: Json
+          created_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lead_activities_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "leads"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lead_activities_column_id_fkey"
+            columns: ["column_id"]
+            isOneToOne: false
+            referencedRelation: "crm_columns"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      qualification_rules: {
+        Row: {
+          id: string
+          funnel_id: string | null
+          rule_name: string
+          conditions: Json
+          qualification_label: string
+          classification: Database["public"]["Enums"]["lead_classification"] | null
+          priority: number
+          active: boolean
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          funnel_id?: string | null
+          rule_name: string
+          conditions?: Json
+          qualification_label: string
+          classification?: Database["public"]["Enums"]["lead_classification"] | null
+          priority?: number
+          active?: boolean
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          funnel_id?: string | null
+          rule_name?: string
+          conditions?: Json
+          qualification_label?: string
+          classification?: Database["public"]["Enums"]["lead_classification"] | null
+          priority?: number
+          active?: boolean
+          created_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "qualification_rules_funnel_id_fkey"
+            columns: ["funnel_id"]
+            isOneToOne: false
+            referencedRelation: "funnels"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      distribution_rules: {
+        Row: {
+          id: string
+          name: string
+          funnel_id: string | null
+          classifications: string[]
+          sdr_ids: string[]
+          max_leads_per_sdr: number | null
+          active: boolean | null
+          schedule_enabled: boolean | null
+          schedule_days: number[]
+          schedule_time: string | null
+          distribution_mode: string | null
+          sdr_percentages: Json
+          sdr_funnel_limits: Json
+          created_by: string | null
+          created_at: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          id?: string
+          name: string
+          funnel_id?: string | null
+          classifications?: string[]
+          sdr_ids: string[]
+          max_leads_per_sdr?: number | null
+          active?: boolean | null
+          schedule_enabled?: boolean | null
+          schedule_days?: number[]
+          schedule_time?: string | null
+          distribution_mode?: string | null
+          sdr_percentages?: Json
+          sdr_funnel_limits?: Json
+          created_by?: string | null
+          created_at?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          id?: string
+          name?: string
+          funnel_id?: string | null
+          classifications?: string[]
+          sdr_ids?: string[]
+          max_leads_per_sdr?: number | null
+          active?: boolean | null
+          schedule_enabled?: boolean | null
+          schedule_days?: number[]
+          schedule_time?: string | null
+          distribution_mode?: string | null
+          sdr_percentages?: Json
+          sdr_funnel_limits?: Json
+          created_by?: string | null
+          created_at?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "distribution_rules_funnel_id_fkey"
+            columns: ["funnel_id"]
+            isOneToOne: false
+            referencedRelation: "funnels"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      lead_distribution_logs: {
+        Row: {
+          id: string
+          distributed_by: string | null
+          funnel_id: string | null
+          rule_id: string | null
+          leads_count: number
+          sdr_ids: string[]
+          distribution_mode: string
+          classifications: string[] | null
+          lead_ids: string[] | null
+          workload_snapshot: Json | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          distributed_by?: string | null
+          funnel_id?: string | null
+          rule_id?: string | null
+          leads_count: number
+          sdr_ids: string[]
+          distribution_mode: string
+          classifications?: string[] | null
+          lead_ids?: string[] | null
+          workload_snapshot?: Json | null
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          distributed_by?: string | null
+          funnel_id?: string | null
+          rule_id?: string | null
+          leads_count?: number
+          sdr_ids?: string[]
+          distribution_mode?: string
+          classifications?: string[] | null
+          lead_ids?: string[] | null
+          workload_snapshot?: Json | null
+          created_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lead_distribution_logs_funnel_id_fkey"
+            columns: ["funnel_id"]
+            isOneToOne: false
+            referencedRelation: "funnels"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lead_distribution_logs_rule_id_fkey"
+            columns: ["rule_id"]
+            isOneToOne: false
+            referencedRelation: "distribution_rules"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      sdr_capacities: {
+        Row: {
+          id: string
+          sdr_id: string
+          funnel_id: string | null
+          max_leads: number | null
+          percentage: number | null
+          active: boolean | null
+          created_at: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          id?: string
+          sdr_id: string
+          funnel_id?: string | null
+          max_leads?: number | null
+          percentage?: number | null
+          active?: boolean | null
+          created_at?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          id?: string
+          sdr_id?: string
+          funnel_id?: string | null
+          max_leads?: number | null
+          percentage?: number | null
+          active?: boolean | null
+          created_at?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sdr_capacities_sdr_id_fkey"
+            columns: ["sdr_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sdr_capacities_funnel_id_fkey"
+            columns: ["funnel_id"]
+            isOneToOne: false
+            referencedRelation: "funnels"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      notifications: {
+        Row: {
+          id: string
+          user_id: string
+          title: string
+          message: string
+          type: string
+          read: boolean
+          metadata: Json
+          created_at: string | null
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          title: string
+          message: string
+          type?: string
+          read?: boolean
+          metadata?: Json
+          created_at?: string | null
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          title?: string
+          message?: string
+          type?: string
+          read?: boolean
+          metadata?: Json
+          created_at?: string | null
+        }
+        Relationships: []
+      }
+      niches: {
+        Row: {
+          id: string
+          name: string
+          active: boolean | null
+          created_at: string | null
+        }
+        Insert: {
+          id?: string
+          name: string
+          active?: boolean | null
+          created_at?: string | null
+        }
+        Update: {
+          id?: string
+          name?: string
+          active?: boolean | null
+          created_at?: string | null
+        }
+        Relationships: []
+      }
+      activity_logs: {
+        Row: {
+          id: string
+          user_id: string | null
+          action: string
+          entity_type: string
+          entity_id: string | null
+          details: Json
+          ip_address: string | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          user_id?: string | null
+          action: string
+          entity_type: string
+          entity_id?: string | null
+          details?: Json
+          ip_address?: string | null
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string | null
+          action?: string
+          entity_type?: string
+          entity_id?: string | null
+          details?: Json
+          ip_address?: string | null
+          created_at?: string
+        }
+        Relationships: []
+      }
+      cleanup_logs: {
+        Row: {
+          id: string
+          lead_id: string | null
+          lead_data: Json
+          cleanup_reason: string
+          google_sheet_row: number | null
+          google_sheet_url: string | null
+          sheet_name: string | null
+          exported_at: string | null
+          cleaned_at: string | null
+        }
+        Insert: {
+          id?: string
+          lead_id?: string | null
+          lead_data: Json
+          cleanup_reason: string
+          google_sheet_row?: number | null
+          google_sheet_url?: string | null
+          sheet_name?: string | null
+          exported_at?: string | null
+          cleaned_at?: string | null
+        }
+        Update: {
+          id?: string
+          lead_id?: string | null
+          lead_data?: Json
+          cleanup_reason?: string
+          google_sheet_row?: number | null
+          google_sheet_url?: string | null
+          sheet_name?: string | null
+          exported_at?: string | null
+          cleaned_at?: string | null
+        }
+        Relationships: []
       }
       funnel_daily_data: {
         Row: {
@@ -110,6 +781,14 @@ export type Database = {
           id: string
           is_active: boolean
           name: string
+          google_sheet_url: string | null
+          sheet_name: string | null
+          column_mapping: Json | null
+          auto_sync_enabled: boolean | null
+          last_sync_at: string | null
+          sync_interval_minutes: number | null
+          import_from_date: string | null
+          updated_at: string
         }
         Insert: {
           category?: string | null
@@ -118,6 +797,14 @@ export type Database = {
           id?: string
           is_active?: boolean
           name: string
+          google_sheet_url?: string | null
+          sheet_name?: string | null
+          column_mapping?: Json | null
+          auto_sync_enabled?: boolean | null
+          last_sync_at?: string | null
+          sync_interval_minutes?: number | null
+          import_from_date?: string | null
+          updated_at?: string
         }
         Update: {
           category?: string | null
@@ -126,6 +813,14 @@ export type Database = {
           id?: string
           is_active?: boolean
           name?: string
+          google_sheet_url?: string | null
+          sheet_name?: string | null
+          column_mapping?: Json | null
+          auto_sync_enabled?: boolean | null
+          last_sync_at?: string | null
+          sync_interval_minutes?: number | null
+          import_from_date?: string | null
+          updated_at?: string
         }
         Relationships: []
       }
@@ -439,21 +1134,41 @@ export type Database = {
           created_at: string
           email: string
           id: string
+          name: string | null
+          timezone: string
+          active: boolean
+          squad_id: string | null
           updated_at: string
         }
         Insert: {
           created_at?: string
           email: string
           id: string
+          name?: string | null
+          timezone?: string
+          active?: boolean
+          squad_id?: string | null
           updated_at?: string
         }
         Update: {
           created_at?: string
           email?: string
           id?: string
+          name?: string | null
+          timezone?: string
+          active?: boolean
+          squad_id?: string | null
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "profiles_squad_id_fkey"
+            columns: ["squad_id"]
+            isOneToOne: false
+            referencedRelation: "squads"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       sdr_funnels: {
         Row: {
@@ -776,6 +1491,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      apply_qualification_rules: {
+        Args: { p_lead_id: string }
+        Returns: undefined
+      }
       get_all_funnels_summary: {
         Args: { p_period_end?: string; p_period_start?: string }
         Returns: Json
@@ -811,6 +1530,10 @@ export type Database = {
         }
         Returns: boolean
       }
+      is_admin_or_lider: {
+        Args: { _user_id: string }
+        Returns: boolean
+      }
       is_linked_to_entity: {
         Args: { _entity_id: string; _entity_type: string; _user_id: string }
         Returns: boolean
@@ -825,7 +1548,10 @@ export type Database = {
       }
     }
     Enums: {
-      app_role: "admin" | "manager" | "viewer" | "user"
+      app_role: "admin" | "manager" | "viewer" | "user" | "lider" | "sdr" | "closer"
+      lead_classification: "diamante" | "ouro" | "prata" | "bronze"
+      lead_status: "novo" | "em_atendimento" | "agendado" | "concluido"
+      appointment_status: "agendado" | "reagendado" | "realizado" | "nao_compareceu" | "cancelado"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -953,7 +1679,10 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      app_role: ["admin", "manager", "viewer", "user"],
+      app_role: ["admin", "manager", "viewer", "user", "lider", "sdr", "closer"],
+      lead_classification: ["diamante", "ouro", "prata", "bronze"],
+      lead_status: ["novo", "em_atendimento", "agendado", "concluido"],
+      appointment_status: ["agendado", "reagendado", "realizado", "nao_compareceu", "cancelado"],
     },
   },
 } as const

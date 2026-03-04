@@ -825,7 +825,10 @@ export type Database = {
       }
     }
     Enums: {
-      app_role: "admin" | "manager" | "viewer" | "user"
+      app_role: "admin" | "manager" | "viewer" | "user" | "lider" | "sdr" | "closer"
+      lead_classification: "diamante" | "ouro" | "prata" | "bronze"
+      lead_status: "novo" | "em_atendimento" | "agendado" | "concluido"
+      appointment_status: "agendado" | "reagendado" | "realizado" | "nao_compareceu" | "cancelado"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -953,7 +956,10 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      app_role: ["admin", "manager", "viewer", "user"],
+      app_role: ["admin", "manager", "viewer", "user", "lider", "sdr", "closer"],
+      lead_classification: ["diamante", "ouro", "prata", "bronze"],
+      lead_status: ["novo", "em_atendimento", "agendado", "concluido"],
+      appointment_status: ["agendado", "reagendado", "realizado", "nao_compareceu", "cancelado"],
     },
   },
 } as const

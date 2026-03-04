@@ -1,7 +1,7 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@bethel/shared-auth';
-import { TrendingUp, ArrowRight } from 'lucide-react';
+import { TrendingUp, Users, ArrowRight } from 'lucide-react';
 
 interface ServiceCard {
   id: string;
@@ -11,40 +11,48 @@ interface ServiceCard {
   path: string;
   color: string;
   status: 'active' | 'coming_soon';
+  allowedRoles?: string[];
 }
 
-const serviceCards: ServiceCard[] = [
+const allServiceCards: ServiceCard[] = [
   {
     id: 'monetizacao',
-    title: 'Monetização',
-    description: 'Dashboard de vendas, métricas de performance, closers, SDRs, squads e relatórios de funil.',
+    title: 'Monetizacao',
+    description: 'Agenda de calls, dashboard de vendas, metricas de performance, squads e relatorios de funil.',
     icon: TrendingUp,
     path: '/monetizacao',
     color: 'from-blue-600 to-indigo-600',
     status: 'active',
+    allowedRoles: ['admin', 'lider', 'closer'],
   },
-  // Future services:
-  // {
-  //   id: 'crm',
-  //   title: 'CRM',
-  //   description: 'Gestão de relacionamento com clientes e pipeline de vendas.',
-  //   icon: Users,
-  //   path: '/crm',
-  //   color: 'from-emerald-600 to-teal-600',
-  //   status: 'coming_soon',
-  // },
+  {
+    id: 'sdr',
+    title: 'Bethel SDR',
+    description: 'CRM de leads, importacao, qualificacao, distribuicao e agendamento de calls.',
+    icon: Users,
+    path: '/sdr',
+    color: 'from-emerald-600 to-teal-600',
+    status: 'active',
+    allowedRoles: ['admin', 'lider', 'sdr'],
+  },
 ];
 
 export function HomePage() {
   const navigate = useNavigate();
   const { user, role } = useAuth();
 
+  const serviceCards = allServiceCards.filter((card) => {
+    if (!card.allowedRoles) return true;
+    if (!role) return false;
+    return card.allowedRoles.includes(role);
+  });
+
   return (
     <div className="max-w-5xl mx-auto space-y-8">
       {/* Welcome */}
       <div>
         <h1 className="text-2xl md:text-3xl font-bold text-foreground">
-          Bem-vindo à Bethel Platform
+          Bem-vindo a Bethel Platform
         </h1>
         <p className="text-muted-foreground mt-1">
           Acesse os serviços disponíveis abaixo.

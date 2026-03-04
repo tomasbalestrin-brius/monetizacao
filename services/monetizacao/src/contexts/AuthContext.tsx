@@ -4,17 +4,33 @@ import { supabase } from '@/integrations/supabase/client';
 import type { Database } from '@/integrations/supabase/types';
 
 type AppRole = Database['public']['Enums']['app_role'];
+type NormalizedRole = 'admin' | 'lider' | 'sdr' | 'closer';
+
+function normalizeRole(role: AppRole): NormalizedRole {
+  switch (role) {
+    case 'manager': return 'lider';
+    case 'user': return 'closer';
+    case 'viewer': return 'closer';
+    default: return role as NormalizedRole;
+  }
+}
 
 interface AuthContextType {
   user: User | null;
   session: Session | null;
-  role: AppRole | null;
+  role: NormalizedRole | null;
+  rawRole: AppRole | null;
   permissions: string[];
   loading: boolean;
   signIn: (email: string, password: string) => Promise<{ error: Error | null }>;
   signUp: (email: string, password: string) => Promise<{ error: Error | null }>;
   signOut: () => Promise<void>;
   isAdmin: boolean;
+  isLider: boolean;
+  isSDR: boolean;
+  isCloser: boolean;
+  isAdminOrLider: boolean;
+  // Legacy compat
   isManager: boolean;
   isUser: boolean;
   hasPermission: (module: string) => boolean;
@@ -119,12 +135,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setPermissions([]);
   };
 
-  const isAdmin = role === 'admin';
-  const isManager = role === 'manager';
-  const isUser = role === 'user';
+  const normalizedRole = role ? normalizeRole(role) : null;
+
+  const isAdmin = normalizedRole === 'admin';
+  const isLider = normalizedRole === 'lider';
+  const isSDR = normalizedRole === 'sdr';
+  const isCloser = normalizedRole === 'closer';
+  const isAdminOrLider = isAdmin || isLider;
+  const isManager = isLider;
+  const isUser = isCloser;
 
   const hasPermission = (module: string): boolean => {
     if (isAdmin) return true;
+    if (isLider) return true;
     return permissions.includes(module);
   };
 
@@ -133,13 +156,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       value={{
         user,
         session,
-        role,
+        role: normalizedRole,
+        rawRole: role,
         permissions,
         loading,
         signIn,
         signUp,
         signOut,
         isAdmin,
+        isLider,
+        isSDR,
+        isCloser,
+        isAdminOrLider,
         isManager,
         isUser,
         hasPermission,

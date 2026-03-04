@@ -7,8 +7,9 @@ interface PlatformHeaderProps {
 }
 
 const routeTitles: Record<string, string> = {
-  '/': 'Início',
-  '/monetizacao': 'Monetização',
+  '/': 'Inicio',
+  '/monetizacao': 'Monetizacao',
+  '/sdr': 'Bethel SDR',
 };
 
 function getTitle(pathname: string): string {

@@ -1,6 +1,7 @@
 import React from 'react';
-import { LayoutDashboard, Phone, Users, User } from 'lucide-react';
+import { LayoutDashboard, Phone, Users, User, Calendar } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useAuth } from '@/contexts/AuthContext';
 import { ModuleId } from './Sidebar';
 
 interface BottomNavigationProps {
@@ -8,14 +9,22 @@ interface BottomNavigationProps {
   onModuleChange: (module: ModuleId) => void;
 }
 
-const navItems = [
-  { id: 'dashboard' as ModuleId, label: 'Dashboard', icon: LayoutDashboard },
-  { id: 'sdrs' as ModuleId, label: 'SDRs', icon: Phone },
-  { id: 'eagles' as ModuleId, label: 'Squads', icon: Users },
-  { id: 'admin' as ModuleId, label: 'Admin', icon: User },
+const allNavItems = [
+  { id: 'dashboard' as ModuleId, label: 'Dashboard', icon: LayoutDashboard, closerOnly: false },
+  { id: 'agenda' as ModuleId, label: 'Agenda', icon: Calendar, closerOnly: false },
+  { id: 'sdrs' as ModuleId, label: 'SDRs', icon: Phone, closerOnly: false },
+  { id: 'eagles' as ModuleId, label: 'Squads', icon: Users, closerOnly: false },
+  { id: 'admin' as ModuleId, label: 'Admin', icon: User, closerOnly: false },
+];
+
+// Closer sees only Agenda
+const closerNavItems = [
+  { id: 'agenda' as ModuleId, label: 'Agenda', icon: Calendar, closerOnly: false },
 ];
 
 export function BottomNavigation({ activeModule, onModuleChange }: BottomNavigationProps) {
+  const { isCloser } = useAuth();
+  const navItems = isCloser ? closerNavItems : allNavItems;
   const handleClick = (moduleId: ModuleId) => {
     // Haptic feedback if available
     if (navigator.vibrate) {

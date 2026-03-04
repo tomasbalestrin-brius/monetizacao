@@ -5,7 +5,6 @@ import {
   LayoutDashboard,
   TrendingUp,
   Users,
-  Settings,
   LogOut,
   X,
   ChevronRight,
@@ -17,32 +16,42 @@ interface ServiceItem {
   icon: React.ElementType;
   path: string;
   description: string;
+  // Roles that can see this service. Empty = all authenticated users.
+  allowedRoles?: string[];
 }
 
 const services: ServiceItem[] = [
   {
     id: 'home',
-    label: 'Início',
+    label: 'Inicio',
     icon: LayoutDashboard,
     path: '/',
-    description: 'Visão geral da plataforma',
+    description: 'Visao geral da plataforma',
   },
   {
     id: 'monetizacao',
-    label: 'Monetização',
+    label: 'Monetizacao',
     icon: TrendingUp,
     path: '/monetizacao',
-    description: 'Vendas, métricas e performance',
+    description: 'Agenda, metricas e performance',
+    allowedRoles: ['admin', 'lider', 'closer'],
   },
-  // Future services:
-  // {
-  //   id: 'crm',
-  //   label: 'CRM',
-  //   icon: Users,
-  //   path: '/crm',
-  //   description: 'Gestão de relacionamento',
-  // },
+  {
+    id: 'sdr',
+    label: 'Bethel SDR',
+    icon: Users,
+    path: '/sdr',
+    description: 'CRM, leads e agendamentos',
+    allowedRoles: ['admin', 'lider', 'sdr'],
+  },
 ];
+
+const roleLabels: Record<string, string> = {
+  admin: 'Administrador',
+  lider: 'Lider',
+  sdr: 'SDR',
+  closer: 'Closer',
+};
 
 interface PlatformSidebarProps {
   isOpen: boolean;
@@ -68,6 +77,12 @@ export function PlatformSidebar({ isOpen, onClose }: PlatformSidebarProps) {
     if (path === '/') return location.pathname === '/';
     return location.pathname.startsWith(path);
   };
+
+  const visibleServices = services.filter((service) => {
+    if (!service.allowedRoles) return true;
+    if (!role) return false;
+    return service.allowedRoles.includes(role);
+  });
 
   return (
     <>
@@ -97,7 +112,7 @@ export function PlatformSidebar({ isOpen, onClose }: PlatformSidebarProps) {
               </div>
               <div>
                 <h1 className="font-bold text-foreground text-sm">Bethel Platform</h1>
-                <p className="text-[10px] text-muted-foreground">Sistema de Gestão</p>
+                <p className="text-[10px] text-muted-foreground">Sistema de Gestao</p>
               </div>
             </div>
             <button
@@ -111,9 +126,9 @@ export function PlatformSidebar({ isOpen, onClose }: PlatformSidebarProps) {
           {/* Services Navigation */}
           <nav className="flex-1 p-3 space-y-1 overflow-y-auto">
             <p className="px-3 py-2 text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">
-              Serviços
+              Servicos
             </p>
-            {services.map((service) => {
+            {visibleServices.map((service) => {
               const Icon = service.icon;
               const active = isActive(service.path);
               return (
@@ -153,10 +168,10 @@ export function PlatformSidebar({ isOpen, onClose }: PlatformSidebarProps) {
               </div>
               <div className="flex-1 min-w-0">
                 <p className="text-xs font-medium text-foreground truncate">
-                  {user?.email ?? 'Usuário'}
+                  {user?.email ?? 'Usuario'}
                 </p>
-                <p className="text-[10px] text-muted-foreground capitalize">
-                  {role ?? 'Carregando...'}
+                <p className="text-[10px] text-muted-foreground">
+                  {role ? (roleLabels[role] ?? role) : 'Carregando...'}
                 </p>
               </div>
             </div>
