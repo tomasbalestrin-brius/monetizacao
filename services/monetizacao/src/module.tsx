@@ -95,7 +95,7 @@ export { ErrorBoundary } from '@/components/ErrorBoundary';
 
 // Re-export hooks for use by other services
 export { useSquads, useClosers, useMetrics, useTotalMetrics } from '@/hooks/useMetrics';
-export { useSDRs, useSDRMetrics, useSDRTotalMetrics } from '@/hooks/useSdrMetrics';
+// SDR hooks removed - SDR is a separate microservice
 export { useFunnels } from '@/hooks/useFunnels';
 export { useGoals, useAllGoals } from '@/hooks/useGoals';
 export { useMeetings } from '@/hooks/useMeetings';

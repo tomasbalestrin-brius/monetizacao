@@ -67,7 +67,7 @@ const App = () => (
             {/* Public routes */}
             <Route path="/auth" element={<AuthPage />} />
 
-            {/* Protected platform routes */}
+            {/* Platform home - with platform layout */}
             <Route
               path="/"
               element={
@@ -77,39 +77,43 @@ const App = () => (
               }
             >
               <Route index element={<HomePage />} />
+            </Route>
 
-              {/* Monetização Microservice */}
-              <Route
-                path="monetizacao/*"
-                element={
+            {/* Monetização Microservice - own layout, no platform shell */}
+            <Route
+              path="/monetizacao"
+              element={
+                <ProtectedRoute>
                   <React.Suspense
                     fallback={
-                      <div className="flex items-center justify-center min-h-[40vh]">
+                      <div className="flex items-center justify-center min-h-screen">
                         <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
                       </div>
                     }
                   >
                     <MonetizacaoModule />
                   </React.Suspense>
-                }
-              />
+                </ProtectedRoute>
+              }
+            />
 
-              {/* Bethel SDR Microservice */}
-              <Route
-                path="sdr/*"
-                element={
+            {/* Bethel SDR Microservice - own layout, no platform shell */}
+            <Route
+              path="/sdr"
+              element={
+                <ProtectedRoute>
                   <React.Suspense
                     fallback={
-                      <div className="flex items-center justify-center min-h-[40vh]">
+                      <div className="flex items-center justify-center min-h-screen">
                         <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
                       </div>
                     }
                   >
                     <SDRPlaceholder />
                   </React.Suspense>
-                }
-              />
-            </Route>
+                </ProtectedRoute>
+              }
+            />
 
             {/* Catch-all */}
             <Route path="*" element={<NotFoundPage />} />

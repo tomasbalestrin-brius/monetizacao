@@ -11,15 +11,12 @@ import { Loader2 } from 'lucide-react';
 const DashboardOverview = lazy(() => import('@/components/dashboard/DashboardOverview').then(m => ({ default: m.DashboardOverview })));
 const SquadPage = lazy(() => import('@/components/dashboard/SquadPage').then(m => ({ default: m.SquadPage })));
 const AdminPanel = lazy(() => import('@/components/dashboard/AdminPanel').then(m => ({ default: m.AdminPanel })));
-const SDRDashboard = lazy(() => import('@/components/dashboard/sdr').then(m => ({ default: m.SDRDashboard })));
 const UserDashboard = lazy(() => import('@/components/dashboard/UserDashboard').then(m => ({ default: m.UserDashboard })));
 const GoalsConfig = lazy(() => import('@/components/dashboard/GoalsConfig').then(m => ({ default: m.GoalsConfig })));
 const MeetingsPage = lazy(() => import('@/components/dashboard/meetings').then(m => ({ default: m.MeetingsPage })));
 const ReportsPage = lazy(() => import('@/components/dashboard/reports').then(m => ({ default: m.ReportsPage })));
 const AgendaPage = lazy(() => import('@/components/dashboard/agenda/AgendaPage').then(m => ({ default: m.AgendaPage })));
-const CrmKanbanPage = lazy(() => import('@/components/dashboard/crm/CrmKanbanPage').then(m => ({ default: m.CrmKanbanPage })));
 const AvailabilityPage = lazy(() => import('@/components/dashboard/availability/AvailabilityPage').then(m => ({ default: m.AvailabilityPage })));
-const CleanupPage = lazy(() => import('@/components/dashboard/cleanup/CleanupPage').then(m => ({ default: m.CleanupPage })));
 
 function PageLoader() {
   return (
@@ -39,7 +36,7 @@ const Index = () => {
   // Handle URL module parameter
   useEffect(() => {
     const moduleParam = searchParams.get('module');
-    if (moduleParam && ['dashboard', 'agenda', 'crm', 'eagles', 'sharks', 'sdrs', 'reports', 'admin', 'goals', 'meetings', 'availability', 'cleanup'].includes(moduleParam)) {
+    if (moduleParam && ['dashboard', 'agenda', 'eagles', 'sharks', 'reports', 'admin', 'goals', 'meetings', 'availability'].includes(moduleParam)) {
       setActiveModule(moduleParam as ModuleId);
     }
   }, [searchParams]);
@@ -78,16 +75,10 @@ const Index = () => {
         return <GoalsConfig />;
       case 'meetings':
         return <MeetingsPage />;
-      case 'sdrs':
-        return <SDRDashboard />;
       case 'reports':
         return <ReportsPage />;
-      case 'crm':
-        return <CrmKanbanPage />;
       case 'availability':
         return <AvailabilityPage />;
-      case 'cleanup':
-        return <CleanupPage />;
       default:
         return isCloser ? <AgendaPage /> : <DashboardOverview />;
     }
