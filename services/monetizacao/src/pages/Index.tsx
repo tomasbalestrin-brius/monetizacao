@@ -17,6 +17,9 @@ const GoalsConfig = lazy(() => import('@/components/dashboard/GoalsConfig').then
 const MeetingsPage = lazy(() => import('@/components/dashboard/meetings').then(m => ({ default: m.MeetingsPage })));
 const ReportsPage = lazy(() => import('@/components/dashboard/reports').then(m => ({ default: m.ReportsPage })));
 const AgendaPage = lazy(() => import('@/components/dashboard/agenda/AgendaPage').then(m => ({ default: m.AgendaPage })));
+const CrmKanbanPage = lazy(() => import('@/components/dashboard/crm/CrmKanbanPage').then(m => ({ default: m.CrmKanbanPage })));
+const AvailabilityPage = lazy(() => import('@/components/dashboard/availability/AvailabilityPage').then(m => ({ default: m.AvailabilityPage })));
+const CleanupPage = lazy(() => import('@/components/dashboard/cleanup/CleanupPage').then(m => ({ default: m.CleanupPage })));
 
 function PageLoader() {
   return (
@@ -36,7 +39,7 @@ const Index = () => {
   // Handle URL module parameter
   useEffect(() => {
     const moduleParam = searchParams.get('module');
-    if (moduleParam && ['dashboard', 'agenda', 'eagles', 'sharks', 'sdrs', 'reports', 'admin', 'goals', 'meetings'].includes(moduleParam)) {
+    if (moduleParam && ['dashboard', 'agenda', 'crm', 'eagles', 'sharks', 'sdrs', 'reports', 'admin', 'goals', 'meetings', 'availability', 'cleanup'].includes(moduleParam)) {
       setActiveModule(moduleParam as ModuleId);
     }
   }, [searchParams]);
@@ -79,6 +82,12 @@ const Index = () => {
         return <SDRDashboard />;
       case 'reports':
         return <ReportsPage />;
+      case 'crm':
+        return <CrmKanbanPage />;
+      case 'availability':
+        return <AvailabilityPage />;
+      case 'cleanup':
+        return <CleanupPage />;
       default:
         return isCloser ? <AgendaPage /> : <DashboardOverview />;
     }

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Menu, User, Bell } from 'lucide-react';
+import { Menu, User } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
@@ -12,6 +12,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Badge } from '@/components/ui/badge';
+import { NotificationBell } from './notifications/NotificationBell';
 
 interface HeaderProps {
   onMenuClick: () => void;
@@ -73,10 +74,7 @@ export function Header({ onMenuClick }: HeaderProps) {
         {/* Right side */}
         <div className="flex items-center gap-3">
           {/* Notifications */}
-          <Button variant="ghost" size="icon" className="relative">
-            <Bell size={20} />
-            <span className="absolute top-1 right-1 w-2 h-2 bg-primary rounded-full" />
-          </Button>
+          <NotificationBell />
 
           {/* User menu */}
           <DropdownMenu>

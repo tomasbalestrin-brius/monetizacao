@@ -1,5 +1,5 @@
 import React from 'react';
-import { LayoutDashboard, Phone, Users, User, Calendar } from 'lucide-react';
+import { LayoutDashboard, Phone, Users, User, Calendar, Kanban, Clock } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/contexts/AuthContext';
 import { ModuleId } from './Sidebar';
@@ -10,16 +10,17 @@ interface BottomNavigationProps {
 }
 
 const allNavItems = [
-  { id: 'dashboard' as ModuleId, label: 'Dashboard', icon: LayoutDashboard, closerOnly: false },
-  { id: 'agenda' as ModuleId, label: 'Agenda', icon: Calendar, closerOnly: false },
-  { id: 'sdrs' as ModuleId, label: 'SDRs', icon: Phone, closerOnly: false },
-  { id: 'eagles' as ModuleId, label: 'Squads', icon: Users, closerOnly: false },
-  { id: 'admin' as ModuleId, label: 'Admin', icon: User, closerOnly: false },
+  { id: 'dashboard' as ModuleId, label: 'Dashboard', icon: LayoutDashboard },
+  { id: 'agenda' as ModuleId, label: 'Agenda', icon: Calendar },
+  { id: 'crm' as ModuleId, label: 'CRM', icon: Kanban },
+  { id: 'sdrs' as ModuleId, label: 'SDRs', icon: Phone },
+  { id: 'eagles' as ModuleId, label: 'Squads', icon: Users },
 ];
 
-// Closer sees only Agenda
+// Closer sees Agenda + Disponibilidade
 const closerNavItems = [
-  { id: 'agenda' as ModuleId, label: 'Agenda', icon: Calendar, closerOnly: false },
+  { id: 'agenda' as ModuleId, label: 'Agenda', icon: Calendar },
+  { id: 'availability' as ModuleId, label: 'Horarios', icon: Clock },
 ];
 
 export function BottomNavigation({ activeModule, onModuleChange }: BottomNavigationProps) {
