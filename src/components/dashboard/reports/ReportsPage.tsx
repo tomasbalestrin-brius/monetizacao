@@ -28,10 +28,15 @@ import {
 } from '@/components/ui/select';
 
 export function ReportsPage() {
+  const { isAdmin, isManager } = useAuth();
+  const canManage = isAdmin || isManager;
+
   const [selectedMonth, setSelectedMonth] = useState(() => startOfMonth(new Date()));
   const [selectedFunnelId, setSelectedFunnelId] = useState<string | null>(null);
   const [customPeriodStart, setCustomPeriodStart] = useState<string | undefined>(undefined);
   const [customPeriodEnd, setCustomPeriodEnd] = useState<string | undefined>(undefined);
+  const [sdrDialogOpen, setSdrDialogOpen] = useState(false);
+  const [sdrDialogType, setSdrDialogType] = useState<'sdr' | 'social_selling'>('sdr');
 
   const monthPeriod = useMemo(() => getMonthPeriod(selectedMonth), [selectedMonth]);
 
