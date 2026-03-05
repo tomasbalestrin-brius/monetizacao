@@ -3,7 +3,7 @@ import {
   DollarSign, CheckCircle, RotateCcw, Ban,
 } from 'lucide-react';
 import { useCancelAppointment } from '@/hooks/useAppointments';
-import { useAuth } from '@/contexts/AuthContext';
+import { useAuth } from '@bethel/shared-auth';
 import { toast } from 'sonner';
 import type { AppointmentWithLead } from '@/hooks/useAppointments';
 

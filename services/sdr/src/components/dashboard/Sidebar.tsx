@@ -13,7 +13,7 @@ import {
   Moon,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { useAuth } from '@/contexts/AuthContext';
+import { useAuth } from '@bethel/shared-auth';
 import { useTheme } from '@bethel/shared-theme';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';

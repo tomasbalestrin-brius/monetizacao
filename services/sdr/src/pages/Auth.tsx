@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { TrendingUp, Eye, EyeOff, Loader2 } from 'lucide-react';
-import { useAuth } from '@/contexts/AuthContext';
+import { useAuth } from '@bethel/shared-auth';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -97,7 +97,7 @@ export default function Auth() {
           <div className="bg-blue-600 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
             <TrendingUp className="text-white" size={32} />
           </div>
-          <h1 className="text-3xl font-bold text-white mb-2">Sistema de Monetização</h1>
+          <h1 className="text-3xl font-bold text-white mb-2">Bethel SDR</h1>
           <p className="text-slate-400">
             {isLogin ? 'Faça login para continuar' : 'Crie sua conta'}
           </p>

@@ -7,7 +7,7 @@ import {
   useSaveDefaultAvailability,
 } from '@/hooks/useCloserAvailability';
 import { useClosersList } from '@/hooks/useAppointments';
-import { useAuth } from '@/contexts/AuthContext';
+import { useAuth } from '@bethel/shared-auth';
 import { toast } from 'sonner';
 
 const dayNames = ['Domingo', 'Segunda', 'Terca', 'Quarta', 'Quinta', 'Sexta', 'Sabado'];

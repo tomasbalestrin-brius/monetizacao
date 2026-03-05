@@ -8,7 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { MonthSelector } from '@/components/dashboard/MonthSelector';
 import { useClosers } from '@/hooks/useMetrics';
 import { useAllGoals, useUpsertGoal, CLOSER_METRIC_KEYS } from '@/hooks/useGoals';
-import { useAuth } from '@/contexts/AuthContext';
+import { useAuth } from '@bethel/shared-auth';
 
 export function GoalsConfig() {
   const { isAdmin, permissions } = useAuth();

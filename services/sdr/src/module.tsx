@@ -20,7 +20,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Toaster } from 'sonner';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
-import { AuthProvider } from '@/contexts/AuthContext';
+import { AuthProvider } from '@bethel/shared-auth';
 import { Loader2 } from 'lucide-react';
 
 // Lazy-loaded pages

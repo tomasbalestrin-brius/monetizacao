@@ -11,7 +11,7 @@ import {
   DialogTrigger,
 } from '@/components/ui/dialog';
 import { useSDRFunnels, useAddSDRFunnel, useDeleteSDRFunnel } from '@/hooks/useSdrMetrics';
-import { useAuth } from '@/contexts/AuthContext';
+import { useAuth } from '@bethel/shared-auth';
 
 interface SDRFunnelManagerProps {
   sdrId: string;

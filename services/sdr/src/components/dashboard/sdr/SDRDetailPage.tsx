@@ -25,7 +25,7 @@ import { SDRWeeklyComparisonChart } from './SDRWeeklyComparisonChart';
 import { SDRDataTable } from './SDRDataTable';
 import { SDRMetricsDialog } from './SDRMetricsDialog';
 import { useSDRs, useSDRMetrics, useSDRFunnels, useDeleteSDRMetric, type SDRAggregatedMetrics, type SDRMetric } from '@/hooks/useSdrMetrics';
-import { useAuth } from '@/contexts/AuthContext';
+import { useAuth } from '@bethel/shared-auth';
 import { SDRFunnelManager } from './SDRFunnelManager';
 import { useSwipeNavigation } from '@/hooks/useSwipeNavigation';
 import { useRealtimeSDRMetrics } from '@/hooks/useRealtimeMetrics';

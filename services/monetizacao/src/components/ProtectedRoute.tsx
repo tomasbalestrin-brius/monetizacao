@@ -1,7 +1,7 @@
 import React from 'react';
 import { Navigate } from 'react-router-dom';
 import { Loader2 } from 'lucide-react';
-import { useAuth } from '@/contexts/AuthContext';
+import { useAuth } from '@bethel/shared-auth';
 
 interface ProtectedRouteProps {
   children: React.ReactNode;

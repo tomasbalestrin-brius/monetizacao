@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useAuth } from '@/contexts/AuthContext';
+import { useAuth } from '@bethel/shared-auth';
 import { useSDRs, useCreateSDR, useUpdateSDR, useDeleteSDR } from '@/hooks/useSdrMetrics';
 import {
   useCrmColumns,
