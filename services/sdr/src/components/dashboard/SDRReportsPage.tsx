@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import { useAuth } from '@/contexts/AuthContext';
+import { useAuth } from '@bethel/shared-auth';
 import { useSDRsWithMetrics } from '@/hooks/useSdrMetrics';
 import { useAllFunnelsSummary } from '@/hooks/useFunnels';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';

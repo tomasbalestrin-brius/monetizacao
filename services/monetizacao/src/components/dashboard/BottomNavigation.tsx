@@ -1,6 +1,6 @@
 import { LayoutDashboard, Calendar, FileText, Clock, Home } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { useAuth } from '@/contexts/AuthContext';
+import { useAuth } from '@bethel/shared-auth';
 import { ModuleId } from './Sidebar';
 
 interface BottomNavigationProps {

@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import { useAuth } from '@/contexts/AuthContext';
+import { useAuth } from '@bethel/shared-auth';
 import { useAppointments, useClosersList } from '@/hooks/useAppointments';
 import { useCloserAvailability, useDefaultAvailability } from '@/hooks/useCloserAvailability';
 import { AppointmentCard } from './AppointmentCard';

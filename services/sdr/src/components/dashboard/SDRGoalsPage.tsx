@@ -2,7 +2,7 @@ import { useState, useMemo, useEffect } from 'react';
 import { format, startOfMonth } from 'date-fns';
 import { useSDRs } from '@/hooks/useSdrMetrics';
 import { useAllGoals, useUpsertGoal, SDR_METRIC_KEYS, getGoalTarget } from '@/hooks/useGoals';
-import { useAuth } from '@/contexts/AuthContext';
+import { useAuth } from '@bethel/shared-auth';
 import { Card, CardContent } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { Target, Save, Loader2 } from 'lucide-react';

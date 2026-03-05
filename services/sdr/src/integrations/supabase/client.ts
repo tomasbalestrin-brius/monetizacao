@@ -1,21 +1,17 @@
 /**
- * Supabase client for the Monetização microservice.
+ * Supabase client for the SDR microservice.
  *
- * Creates its own client using environment variables.
+ * Uses the shared singleton from @bethel/shared-supabase.
  * When running inside the Bethel Platform (sistema mãe), the platform
- * initializes the shared singleton first, and both clients share the
- * same Supabase Auth session via localStorage.
+ * initializes the singleton first. In standalone dev mode, this module
+ * initializes it on first import.
  */
-import { createClient } from '@supabase/supabase-js';
-import type { Database } from './types';
+import { createSupabaseClient, getSupabaseClient } from '@bethel/shared-supabase';
 
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
 const SUPABASE_PUBLISHABLE_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
 
-export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
-  auth: {
-    storage: localStorage,
-    persistSession: true,
-    autoRefreshToken: true,
-  },
-});
+// Initialize the shared singleton (idempotent - won't recreate if already exists)
+createSupabaseClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY);
+
+export const supabase = getSupabaseClient();

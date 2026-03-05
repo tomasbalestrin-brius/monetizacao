@@ -3,7 +3,7 @@ import { Trash2, Loader2, Plus, Database, Users, Link2, Edit2, Target, ArrowRigh
 import { useUsers, useAssignRole, useTogglePermission } from '@/hooks/useUserManagement';
 import { DeleteUserDialog } from './DeleteUserDialog';
 import { useAllEntityLinks, useClosersForLinking, useSDRsForLinking } from '@/hooks/useUserEntityLinks';
-import { useAuth } from '@/contexts/AuthContext';
+import { useAuth } from '@bethel/shared-auth';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';

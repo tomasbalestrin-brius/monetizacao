@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react';
 import { LogOut, Loader2, TrendingUp, LinkIcon } from 'lucide-react';
-import { useAuth } from '@/contexts/AuthContext';
+import { useAuth } from '@bethel/shared-auth';
 import { useCurrentUserEntityLinks } from '@/hooks/useUserEntityLinks';
 import { useClosers } from '@/hooks/useMetrics';
 import { CloserDetailPage } from '@/components/dashboard/closer/CloserDetailPage';
