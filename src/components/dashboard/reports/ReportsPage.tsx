@@ -1,14 +1,23 @@
 import React, { useState, useMemo } from 'react';
-import { FileText, TrendingUp, Users, Phone, DollarSign, Target, Filter } from 'lucide-react';
+import { FileText, TrendingUp, Users, Phone, DollarSign, Target, Filter, Plus } from 'lucide-react';
 import { format, startOfMonth, endOfMonth } from 'date-fns';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Button } from '@/components/ui/button';
 import { MonthSelector, getMonthPeriod } from '@/components/dashboard/MonthSelector';
 import { PeriodFilter } from '@/components/dashboard/PeriodFilter';
 import { useAllFunnelsSummary, useFunnelReport, useSalesByPersonAndProduct, type FunnelSummary } from '@/hooks/useFunnels';
 import { MetricCardSkeletonGrid } from '@/components/dashboard/skeletons';
 import { FunnelChart } from './FunnelChart';
 import { ProductSalesTable } from './ProductSalesTable';
+import { SDRMetricsDialog } from '@/components/dashboard/sdr/SDRMetricsDialog';
+import { useAuth } from '@/contexts/AuthContext';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import {
   Select,
@@ -19,10 +28,15 @@ import {
 } from '@/components/ui/select';
 
 export function ReportsPage() {
+  const { isAdmin, isManager } = useAuth();
+  const canManage = isAdmin || isManager;
+
   const [selectedMonth, setSelectedMonth] = useState(() => startOfMonth(new Date()));
   const [selectedFunnelId, setSelectedFunnelId] = useState<string | null>(null);
   const [customPeriodStart, setCustomPeriodStart] = useState<string | undefined>(undefined);
   const [customPeriodEnd, setCustomPeriodEnd] = useState<string | undefined>(undefined);
+  const [sdrDialogOpen, setSdrDialogOpen] = useState(false);
+  const [sdrDialogType, setSdrDialogType] = useState<'sdr' | 'social_selling'>('sdr');
 
   const monthPeriod = useMemo(() => getMonthPeriod(selectedMonth), [selectedMonth]);
 
@@ -76,6 +90,24 @@ export function ReportsPage() {
           </div>
         </div>
         <div className="flex items-center gap-2 flex-wrap">
+          {canManage && (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button size="sm" className="gap-1.5">
+                  <Plus size={16} />
+                  Adicionar Métrica
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem onClick={() => { setSdrDialogType('sdr'); setSdrDialogOpen(true); }}>
+                  Métrica SDR
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => { setSdrDialogType('social_selling'); setSdrDialogOpen(true); }}>
+                  Métrica Social Selling
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          )}
           <PeriodFilter
             periodStart={customPeriodStart}
             periodEnd={customPeriodEnd}
@@ -181,6 +213,14 @@ export function ReportsPage() {
           <ProductSalesTable data={personProductData || []} isLoading={isLoadingPersonProduct} />
         </TabsContent>
       </Tabs>
+
+      {canManage && (
+        <SDRMetricsDialog
+          open={sdrDialogOpen}
+          onOpenChange={setSdrDialogOpen}
+          sdrType={sdrDialogType}
+        />
+      )}
     </div>
   );
 }
