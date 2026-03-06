@@ -83,7 +83,6 @@ export function ProductSalesTable({ data, isLoading, periodStart, periodEnd, can
 
       if (row.person_type === 'closer') {
         if (row.funnel_id) {
-          // Closer with funnel_daily_data
           if (field === 'sales') {
             const { error } = await supabase.from('funnel_daily_data').insert({
               user_id: row.person_id,
@@ -95,25 +94,17 @@ export function ProductSalesTable({ data, isLoading, periodStart, periodEnd, can
             if (error) throw error;
           }
         } else {
-          // Closer from metrics table
-          const payload: Record<string, unknown> = {
+          const insertPayload = {
             closer_id: row.person_id,
             period_start: periodStart,
             period_end: periodEnd,
-            source: 'manual',
+            source: 'manual' as const,
+            sales: field === 'sales' ? delta : 0,
+            calls: 0,
+            revenue: 0,
+            entries: field === 'entries' ? delta : 0,
           };
-          if (field === 'sales') {
-            payload.sales = delta;
-            payload.calls = 0;
-            payload.revenue = 0;
-            payload.entries = 0;
-          } else {
-            payload.entries = delta;
-            payload.calls = 0;
-            payload.sales = 0;
-            payload.revenue = 0;
-          }
-          const { error } = await supabase.from('metrics').insert(payload);
+          const { error } = await supabase.from('metrics').insert(insertPayload);
           if (error) throw error;
         }
       } else {
