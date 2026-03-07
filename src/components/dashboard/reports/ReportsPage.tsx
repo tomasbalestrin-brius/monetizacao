@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useCallback } from 'react';
 import { FileText, TrendingUp, Users, Phone, DollarSign, Target, Filter, Plus } from 'lucide-react';
 import { format, startOfMonth, endOfMonth } from 'date-fns';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -10,6 +10,11 @@ import { useAllFunnelsSummary, useFunnelReport, useSalesByPersonAndProduct, type
 import { MetricCardSkeletonGrid } from '@/components/dashboard/skeletons';
 import { FunnelChart } from './FunnelChart';
 import { ProductSalesTable } from './ProductSalesTable';
+import { EditableCell } from './EditableCell';
+import { SDRMetricsDialog } from '@/components/dashboard/sdr/SDRMetricsDialog';
+import { supabase } from '@/integrations/supabase/client';
+import { useQueryClient } from '@tanstack/react-query';
+import { toast } from 'sonner';
 import { SDRMetricsDialog } from '@/components/dashboard/sdr/SDRMetricsDialog';
 import { useAuth } from '@/contexts/AuthContext';
 import {
@@ -191,16 +196,7 @@ export function ReportsPage() {
                   </TableHeader>
                   <TableBody>
                     {displayedSummaries.map((f) => (
-                      <TableRow key={f.funnel_id}>
-                        <TableCell className="font-medium">{f.funnel_name}</TableCell>
-                        <TableCell className="text-right">{Number(f.total_leads)}</TableCell>
-                        <TableCell className="text-right">{Number(f.total_qualified)}</TableCell>
-                        <TableCell className="text-right">{Number(f.total_calls_scheduled)}</TableCell>
-                        <TableCell className="text-right">{Number(f.total_calls_done)}</TableCell>
-                        <TableCell className="text-right">{Number(f.total_sales)}</TableCell>
-                        <TableCell className="text-right">{formatCurrency(Number(f.total_revenue))}</TableCell>
-                        <TableCell className="text-right font-semibold">{Number(f.conversion_rate).toFixed(1)}%</TableCell>
-                      </TableRow>
+                      <FunnelRow key={f.funnel_id} funnel={f} canEdit={canManage} periodStart={periodStart} periodEnd={periodEnd} formatCurrency={formatCurrency} />
                     ))}
                   </TableBody>
                 </Table>
