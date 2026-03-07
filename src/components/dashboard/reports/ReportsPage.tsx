@@ -28,8 +28,8 @@ import {
 } from '@/components/ui/select';
 
 export function ReportsPage() {
-  const { isAdmin, isManager } = useAuth();
-  const canManage = isAdmin || isManager;
+  const { isAdmin, isManager, hasPermission } = useAuth();
+  const canManage = isAdmin || isManager || hasPermission('reports');
 
   const [selectedMonth, setSelectedMonth] = useState(() => startOfMonth(new Date()));
   const [selectedFunnelId, setSelectedFunnelId] = useState<string | null>(null);
